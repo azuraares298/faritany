@@ -1,0 +1,3130 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jeu de Points</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    .message-username {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 4px;
+      letter-spacing: 0.01em;
+      line-height: 1.3;
+    }
+
+    /* Options de couleur pour message-username */
+
+    /* Option 1: Bleu moderne (style par défaut) */
+    .message-username {
+      color: #3b82f6;
+    }
+
+    /* Style pour l'élément de demande de match */
+    #matchRequest {
+      background-color: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      padding: 0;
+      overflow: hidden;
+      max-width: 400px;
+      width: 90%;
+    }
+
+    /* En-tête de la demande de match */
+    .match-request-header {
+      background-color: #4a90e2;
+      color: white;
+      padding: 12px 15px;
+      font-weight: bold;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    #viewProfileBtn {
+      background-color: #f8f9fa;
+      color: #333;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-weight: bold;
+      transition: all 0.3s ease;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #viewProfileBtn:hover {
+      background-color: #eaeaea;
+    }
+
+    .button-icon {
+      font-size: 18px;
+    }
+
+    /* Contenu de la demande de match */
+    .match-request-content {
+      padding: 15px;
+    }
+
+    /* Style pour les informations du joueur */
+    .challenger-info {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    /* Avatar du challenger */
+    .challenger-avatar {
+      width: 60px;
+      height: 60px;
+      border-radius: 10px;
+      background-color: #565681;
+      color: white;
+      font-weight: bold;
+      font-size: 24px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-right: 15px;
+      overflow: hidden;
+    }
+
+    .challenger-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Détails du challenger */
+    .challenger-details {
+      flex: 1;
+    }
+
+    .challenger-name {
+      font-weight: bold;
+      font-size: 18px;
+      margin-bottom: 3px;
+    }
+
+    .challenger-stats {
+      display: flex;
+      gap: 15px;
+      font-size: 14px;
+    }
+
+    .challenger-stat {
+      display: flex;
+      align-items: center;
+    }
+
+    .stat-icon {
+      margin-right: 5px;
+      font-size: 14px;
+    }
+
+    .elo-value {
+      font-weight: bold;
+      color: #4a90e2;
+    }
+
+    .winrate-value {
+      font-weight: bold;
+      color: #4caf50;
+    }
+
+    /* Boutons de la notification */
+    .notification-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .accept-btn,
+    .decline-btn {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .accept-btn {
+      background-color: #4a90e2;
+      color: white;
+    }
+
+    .accept-btn:hover {
+      background-color: #3a80d2;
+    }
+
+    .decline-btn {
+      background-color: #e8f0fe;
+      color: #4a90e2;
+    }
+
+    .decline-btn:hover {
+      background-color: #d8e0ee;
+    }
+
+    .message-avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background-color: #565681;
+      color: white;
+      font-weight: bold;
+      font-size: 14px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-right: 10px;
+      overflow: hidden;
+    }
+
+    .message-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Mise à jour des styles des messages chat */
+    .chat-message {
+      padding: 10px 15px;
+      border-radius: 8px;
+      max-width: 80%;
+      position: relative;
+      display: flex;
+      align-items: flex-start;
+    }
+
+    .my-message {
+      align-self: flex-end;
+      background-color: #4a90e2;
+      color: white;
+    }
+
+    .other-message {
+      align-self: flex-start;
+      background-color: #e9e9eb;
+      color: #333;
+    }
+
+    .message-content {
+      flex: 1;
+    }
+
+    /* Style pour les avatars dans les titres récents */
+    .title-avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background-color: #565681;
+      color: white;
+      font-weight: bold;
+      font-size: 14px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-right: 10px;
+      overflow: hidden;
+    }
+
+    .title-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Mise à jour des styles pour les notifications de titre */
+    .title-transfer-item {
+      padding: 10px;
+      margin-bottom: 8px;
+      border-radius: 8px;
+      background-color: #f8f8ff;
+      display: flex;
+      align-items: center;
+    }
+
+    .title-transfer-avatars {
+      display: flex;
+      align-items: center;
+      margin-right: 10px;
+    }
+
+    .title-transfer-arrow {
+      margin: 0 5px;
+      font-size: 12px;
+      color: #666;
+    }
+
+    /* Style pour les avatars des joueurs */
+    .player-avatar-container {
+      width: 50px;
+      height: 50px;
+      margin-right: 15px;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .player-avatar {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 2px solid transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #565681;
+      color: white;
+      font-weight: bold;
+      font-size: 20px;
+    }
+
+    .player-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .player-status-indicator {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 2px solid white;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: bold;
+      margin-left: 5px;
+    }
+
+    .badge-available {
+      background-color: rgba(76, 175, 80, 0.2);
+      color: #4caf50;
+    }
+
+    .badge-in-game {
+      background-color: rgba(244, 67, 54, 0.2);
+      color: #f44336;
+    }
+
+    .player-name {
+      font-weight: bold;
+      font-size: 16px;
+      margin-bottom: 3px;
+    }
+
+    .player-stats {
+      display: flex;
+      gap: 12px;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .player-stat {
+      display: flex;
+      align-items: center;
+    }
+
+
+    .status-available {
+      background-color: #4caf50;
+    }
+
+    .status-in-game {
+      background-color: #f44336;
+    }
+
+    .player-info {
+      flex: 1;
+    }
+
+    .stat-icon {
+      margin-right: 3px;
+    }
+
+    .join-game-form {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+      margin-bottom: 10px;
+      width: 100%;
+    }
+
+    .join-game-form .game-input {
+      flex-grow: 1;
+    }
+
+    .join-game-form button {
+      width: auto !important;
+      padding: 10px 20px;
+    }
+
+    /* Styles pour les onglets du chat */
+    .chat-tabs {
+      display: flex;
+      margin-bottom: 15px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .chat-tab {
+      padding: 10px 15px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.3s;
+      border-bottom: 3px solid transparent;
+    }
+
+    .chat-tab.active {
+      color: #4a90e2;
+      border-bottom-color: #4a90e2;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Style pour les notifications de transfert de titre */
+    .title-notification {
+      background-color: rgba(76, 29, 149, 0.9);
+      /* Violet foncé */
+      color: white;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      animation: slideIn 0.5s ease-out;
+      display: flex;
+      align-items: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .title-notification .title-icon {
+      font-size: 24px;
+      margin-right: 15px;
+    }
+
+    .title-notification .title-message {
+      flex-grow: 1;
+    }
+
+    .title-notification .title-name {
+      font-weight: bold;
+    }
+
+    .title-notification .close-notification {
+      cursor: pointer;
+      opacity: 0.7;
+      transition: opacity 0.3s;
+    }
+
+    .title-notification .close-notification:hover {
+      opacity: 1;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateY(-50px);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    /* Container pour les notifications en haut de l'écran */
+    #notificationsContainer {
+      background-color: rgba(0, 0, 0, 0.1);
+      /* Temporaire pour le débogage */
+      position: fixed;
+      top: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1100;
+      width: 90%;
+      max-width: 500px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Style pour la section des titres récents */
+    .recent-titles-section {
+      background-color: white;
+
+      height: 400px;
+      margin-top: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      height: 400px;
+      margin-top: 20px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .recent-title-transfers {
+      margin-top: 10px;
+    }
+
+    .title-transfer-item {
+      padding: 10px;
+      margin-bottom: 8px;
+      border-radius: 8px;
+      background-color: #f8f8ff;
+      display: flex;
+      align-items: center;
+    }
+
+    .title-transfer-item .title-icon {
+      font-size: 20px;
+      margin-right: 10px;
+    }
+
+    .title-transfer-item .transfer-time {
+      font-size: 0.8em;
+      color: #666;
+      margin-left: auto;
+    }
+
+    .no-transfers {
+      color: #666;
+      font-style: italic;
+      text-align: center;
+      padding: 10px;
+    }
+
+    .active-game-card {
+      padding: 15px;
+      margin: 10px 0;
+      background-color: #f8f9fa;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .active-game-card:hover {
+      background-color: #e8f0fe;
+      transform: translateY(-2px);
+    }
+
+    .game-players {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .game-scores {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      font-weight: bold;
+      font-size: 1.1em;
+    }
+
+    .score-red {
+      color: #ed2939;
+    }
+
+    .score-blue {
+      color: #4267b2;
+    }
+
+    .spectator-count {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background-color: #4caf50;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+    }
+
+    .no-games {
+      text-align: center;
+      padding: 20px;
+      color: #777;
+      font-style: italic;
+    }
+
+    .game-button.watch {
+      background-color: #f3f3f3;
+      color: #333;
+      font-size: 14px;
+      padding: 8px 12px;
+      margin-top: 10px;
+    }
+
+    .game-button.watch:hover {
+      background-color: #e0e0e0;
+    }
+
+    /* Style pour le bouton "Parties en cours" */
+    .game-button.live {
+      background-color: #ff4b4b;
+      color: white;
+    }
+
+    .game-button.live:hover {
+      background-color: #e04141;
+    }
+
+    /* Badge pour le nombre de parties en cours */
+    .live-count {
+      background-color: white;
+      color: #ff4b4b;
+      border-radius: 10px;
+      padding: 1px 6px;
+      font-size: 12px;
+      margin-left: 5px;
+    }
+
+    .message-badge {
+      display: inline-block;
+      background-color: #ff3b30;
+      color: white;
+      border-radius: 50%;
+      min-width: 18px;
+      height: 18px;
+      line-height: 18px;
+      text-align: center;
+      font-size: 12px;
+      font-weight: bold;
+      margin-left: 5px;
+      padding: 0 4px;
+    }
+
+    .chat-messages {
+      flex-grow: 1;
+      padding: 15px;
+      overflow-y: auto;
+      background-color: #f8f9fa;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .chat-message {
+      padding: 10px 15px;
+      border-radius: 8px;
+      max-width: 80%;
+      position: relative;
+    }
+
+    .my-message {
+      align-self: flex-end;
+      background-color: #4a90e2;
+      color: white;
+    }
+
+    .other-message {
+      align-self: flex-start;
+      background-color: #e9e9eb;
+      color: #333;
+    }
+
+    .message-header {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 4px;
+      color: #3b73d4;
+      /* Gris foncé élégant */
+      letter-spacing: 0.01em;
+      line-height: 1.2;
+    }
+
+    /* Pour les messages des autres utilisateurs */
+    .other-message .message-header {
+      color: #305eac;
+    }
+
+    /* Pour tes propres messages */
+    .my-message .message-header {
+      color: rgba(255, 255, 255, 0.9);
+      /* Blanc légèrement transparent pour un message sur fond bleu */
+    }
+
+    /* Pour les messages système */
+    .system-message .message-header {
+      color: #805ad5;
+      /* Violet pour les messages système */
+      font-style: italic;
+    }
+
+    .message-time {
+      font-size: 0.7em;
+      opacity: 0.7;
+      margin-top: 3px;
+      text-align: right;
+    }
+
+    .message-text {
+      word-break: break-word;
+    }
+
+    .chat-input-container {
+      display: flex;
+      padding: 10px;
+      background-color: white;
+      border-top: 1px solid #ddd;
+    }
+
+    #globalChatInput {
+      flex-grow: 1;
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin-right: 8px;
+    }
+
+    #sendGlobalMessage {
+      padding: 8px 16px;
+      background-color: #4a90e2;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.2s;
+    }
+
+    #sendGlobalMessage:hover {
+      background-color: #3a80d2;
+    }
+
+    /* Personnalisation de la modal pour le chat */
+    #chatModal .modal-content {
+      max-width: 600px;
+      width: 90%;
+    }
+
+    .modal-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .modal-buttons button {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+
+    .profile-section {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      margin: 20px 0;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin: 15px 0;
+    }
+
+    #playerModal .modal-content {
+      border-radius: 12px;
+      overflow: hidden;
+      padding: 0;
+    }
+
+    #playerModal .modal-header {
+      background-color: #f8f9fa;
+      border-bottom: 1px solid #eaeaea;
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+    }
+
+    #playerModal .modal-title-container {
+      display: flex;
+      align-items: center;
+      flex: 1;
+    }
+
+    #modalPlayerAvatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background-color: #565681;
+      color: white;
+      font-weight: bold;
+      font-size: 24px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-right: 15px;
+      overflow: hidden;
+    }
+
+    #modalPlayerAvatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    #playerModal h2 {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    #modalPlayerStats {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      padding: 15px;
+      background-color: #f8f9fa;
+      border-bottom: 1px solid #eaeaea;
+    }
+
+    .stat-card {
+      text-align: center;
+      padding: 10px 15px;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+
+    .stat-value {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #666;
+    }
+
+    .stat-card h3 {
+      margin: 0;
+      color: #4a5568;
+      font-size: 14px;
+    }
+
+    .stat-card p {
+      margin: 5px 0 0;
+      font-size: 24px;
+      font-weight: bold;
+      color: #2d3748;
+    }
+
+    .elo-history {
+      margin-top: 20px;
+    }
+
+    .matches-history {
+      margin-top: 20px;
+    }
+
+    .button-icon {
+      margin-right: 8px;
+      font-size: 18px;
+    }
+
+    .game-button,
+    .game-button-deconnexion {
+      gap: 8px;
+      /* Espace entre l'icône et le texte */
+    }
+
+    .player-count {
+      background-color: #4caf50;
+      color: white;
+      padding: 2px 6px;
+      border-radius: 10px;
+      margin-left: 8px;
+      font-size: 14px;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background-color: rgb(0, 0, 0);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .game-container {
+      width: 90%;
+      max-width: 400px;
+
+      padding: 20px;
+      background-color: rgb(0, 0, 0);
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .game-logo {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .game-logo img:first-child {
+      order: -1;
+    }
+
+    .buttons-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .game-input {
+      grid-column: 1 / -1;
+    }
+
+    .full-width {
+      grid-column: 1 / -1;
+    }
+
+    .game-title {
+      font-size: 24px;
+      color: #2c3e50;
+      text-align: center;
+      margin: 10px 0 30px 0;
+    }
+
+    #requestGameBtn {
+      background-color: #4a90e2;
+      color: white;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      transition: all 0.3s ease;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #requestGameBtn:not(.disabled):hover {
+      background-color: #3a80d2;
+      transform: translateY(-2px);
+    }
+
+    #requestGameBtn.disabled {
+      background-color: #e0e0e0;
+      color: #999;
+      cursor: not-allowed;
+    }
+
+    .game-button {
+      width: 100%;
+      padding: 15px;
+      margin: 0;
+      border: none;
+      border-radius: 10px;
+      background-color: #f3fcfb;
+      color: #109c5b;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+    }
+
+    .game-button-deconnexion {
+      width: 100%;
+      padding: 15px;
+      margin: 0;
+      border: none;
+      border-radius: 10px;
+      background-color: #fcf3f3;
+      color: #741a1a;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+    }
+
+    .game-button:hover {
+      background-color: #4fb18b;
+      transform: translateY(-2px);
+      color: black;
+    }
+
+    .game-button-deconnexion:hover {
+      background-color: #b14f4f;
+      transform: translateY(-2px);
+      color: black;
+    }
+
+    .game-button.primary {
+      background-color: #4fb18b;
+      color: white;
+    }
+
+    .game-button.primary:hover {
+      background-color: #1f9232;
+    }
+
+    .game-input {
+      width: 100%;
+      padding: 15px;
+      border: 2px solid #e8f0fe;
+      border-radius: 10px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 90%;
+      max-width: 400px;
+      background-color: white;
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      z-index: 1000;
+    }
+
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+    }
+
+    .modal-body {
+      padding: 20px;
+    }
+
+    .modal-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .close-button {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      font-size: 24px;
+      cursor: pointer;
+      color: #999;
+    }
+
+    .player-list {
+      margin-top: 15px;
+    }
+
+    .player-card {
+      padding: 15px;
+      margin: 10px 0;
+      background-color: #f8f9fa;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+    }
+
+    .player-card:hover {
+      background-color: #e8f0fe;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .player-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .status-in-game {
+      color: #f44336;
+      font-size: 14px;
+    }
+
+    .status-available {
+      color: #4caf50;
+      font-size: 14px;
+    }
+
+    .notification {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      z-index: 1100;
+      width: 90%;
+      max-width: 400px;
+    }
+
+    .notification-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .notification-buttons button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .accept-btn {
+      background-color: #4a90e2;
+      color: white;
+    }
+
+    .decline-btn {
+      background-color: #e8f0fe;
+      color: #4a90e2;
+    }
+
+    .table-container {
+      overflow-x: auto;
+      margin: 20px 0;
+      border-radius: 10px;
+      background: white;
+    }
+
+    .game-image {
+      width: 100%;
+      height: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      background: white;
+    }
+
+    th {
+      background-color: #f8f9fa;
+      color: #2c3e50;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 14px;
+      padding: 16px;
+      border-bottom: 2px solid #e8f0fe;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    td {
+      padding: 16px;
+      border-bottom: 1px solid #f0f4f8;
+      color: #4a5568;
+      font-size: 15px;
+    }
+
+    tbody tr {
+      transition: all 0.2s ease;
+    }
+
+    tbody tr:hover {
+      background-color: #f8fafc;
+      transform: translateY(-1px);
+    }
+
+    .rank-icon {
+      font-size: 20px;
+      display: inline-block;
+      vertical-align: middle;
+    }
+
+    td:first-child {
+      font-size: 0;
+    }
+
+    td:first-child .rank-icon {
+      font-size: 20px;
+    }
+
+    td:first-child .rank-number {
+      font-size: 15px;
+      color: #4a90e2;
+      font-weight: 600;
+    }
+
+    td:nth-child(2) {
+      font-weight: 500;
+    }
+
+    td:nth-child(3) {
+      font-weight: 600;
+      color: #2c5282;
+    }
+
+    td:nth-child(4) {
+      color: #718096;
+    }
+
+    tbody tr:nth-child(1) td:first-child {
+      color: #ffd700;
+      font-weight: 700;
+    }
+
+    tbody tr:nth-child(2) td:first-child {
+      color: #c0c0c0;
+      font-weight: 700;
+    }
+
+    tbody tr:nth-child(3) td:first-child {
+      color: #cd7f32;
+      font-weight: 700;
+    }
+
+    .loading-text {
+      text-align: center;
+      color: #718096;
+      padding: 30px;
+      font-style: italic;
+    }
+
+    @media (max-width: 320px) {
+      .buttons-grid {
+        grid-template-columns: 1fr 1fr;
+        /* Deux colonnes même sur petits écrans */
+        gap: 5px;
+        /* Moins d'espace entre les boutons */
+      }
+
+      .game-title {
+        font-size: 18px;
+        margin-bottom: 20px;
+      }
+
+      .game-button,
+      .game-button-deconnexion {
+        padding: 12px;
+        font-size: 14px;
+      }
+
+      .game-input {
+        padding: 12px;
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="notificationsContainer"></div>
+  <div class="game-container">
+    <div class="game-logo">
+      <img src="dotscapture3.jpg" alt="Dots Capture Logo" class="game-image" />
+    </div>
+
+    <div class="buttons-grid">
+      <button onclick="toggleJoinGameInput()" class="game-button primary full-width">
+        <span class="button-icon">▶️</span>Rejoindre une partie
+      </button>
+
+      <div id="joinGameContainer" style="display: none; grid-column: 1 / -1">
+        <div class="join-game-form">
+          <input type="text" class="game-input" id="gameId" placeholder="🎮 ID de la partie" />
+          <button onclick="joinGame()" class="game-button primary">OK</button>
+        </div>
+      </div>
+
+      <button onclick="showPlayers()" class="game-button">
+        <span class="button-icon">👥</span>En ligne
+        <span id="online-player-count" class="player-count">0</span>
+      </button>
+      <button onclick="showLeaderboard()" class="game-button">
+        <span class="button-icon">🏆</span>Classement
+      </button>
+      <button onclick="showActiveGames()" class="game-button live">
+        <span class="button-icon">🔴</span>Live
+        <span id="live-game-count" class="live-count">0</span>
+      </button>
+      <button onclick="showChat()" class="game-button">
+        <span class="button-icon">💬</span>Chat/Notif
+        <span id="unreadBadge" class="message-badge" style="display: none">0</span>
+      </button>
+      <button onclick="window.location.href='/temple'" class="game-button full-width">
+        <span class="button-icon">🏛️</span>Temple de la Gloire
+      </button>
+      <button onclick="window.location.href='/logout'" class="game-button-deconnexion full-width">
+        <span class="button-icon">🚪</span>Déconnexion
+      </button>
+    </div>
+  </div>
+
+  <div id="modalBackdrop" class="modal-backdrop"></div>
+
+  <div id="playersModal" class="modal">
+    <span class="close-button" onclick="hidePlayers()">&times;</span>
+    <h2>Joueurs en ligne (0)</h2>
+    <div id="online-players" class="player-list">
+      <div class="loading-text">Chargement des joueurs...</div>
+    </div>
+  </div>
+
+  <div id="activeGamesModal" class="modal">
+    <span class="close-button" onclick="hideActiveGames()">&times;</span>
+    <h2>Parties en cours</h2>
+    <div id="active-games-container" class="player-list">
+      <div class="loading-text">Chargement des parties en cours...</div>
+    </div>
+  </div>
+
+  <div id="leaderboardModal" class="modal">
+    <span class="close-button" onclick="hideLeaderboard()">&times;</span>
+    <h2>Classement</h2>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>JOUEUR</th>
+            <th>ELO</th>
+            <th>PARTIES</th>
+          </tr>
+        </thead>
+        <tbody id="leaderboard">
+          <tr>
+            <td colspan="4" class="loading-text">
+              Chargement du classement...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div id="chatModal" class="modal">
+    <span class="close-button" onclick="hideChat()">&times;</span>
+    <h2>Chat Général</h2>
+    <div class="chat-tabs">
+      <button class="chat-tab active" onclick="switchTab('chat')">
+        Messages
+      </button>
+      <button class="chat-tab" onclick="switchTab('titles')">
+        Titres Récents
+      </button>
+      <button class="chat-tab" onclick="switchTab('admin')">
+        Administration
+      </button>
+    </div>
+    <div id="chatTab" class="tab-content active">
+      <div class="chat-container">
+        <div class="chat-messages" id="globalChatMessages">
+          <div class="loading-text">Chargement des messages...</div>
+        </div>
+        <div class="chat-input-container">
+          <input type="text" id="globalChatInput" placeholder="Entrez votre message..." maxlength="150" />
+          <button id="sendGlobalMessage" onclick="sendGlobalMessage()">
+            Envoyer
+          </button>
+        </div>
+      </div>
+    </div>
+    <div id="titlesTab" class="tab-content">
+      <div class="recent-titles-section">
+        <div id="recentTitleTransfers" class="recent-title-transfers">
+          <div class="loading-text">Chargement des titres récents...</div>
+        </div>
+      </div>
+    </div>
+    <!-- Nouvel onglet pour l'administrateur -->
+    <div id="adminTab" class="tab-content">
+      <div class="admin-container">
+        <div class="admin-messages" id="adminMessages">
+          <div class="loading-text">Chargement des annonces...</div>
+        </div>
+        <div class="admin-login-container" id="adminLoginContainer">
+          <div class="admin-login-form">
+            <input type="text" id="adminUsername" placeholder="Nom d'utilisateur admin" class="form-control">
+            <input type="password" id="adminPassword" placeholder="Mot de passe admin" class="form-control">
+            <button id="adminLoginBtn" onclick="adminLogin()" class="btn btn-primary">Connexion</button>
+          </div>
+        </div>
+        <div class="admin-input-container" id="adminInputContainer" style="display: none;">
+          <input type="text" id="adminChatInput" placeholder="Entrez votre annonce..." maxlength="150">
+          <button id="sendAdminMessage" onclick="sendAdminMessage()">Envoyer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <div id="playerModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title-container">
+          <div id="modalPlayerAvatar">A</div>
+          <h2 id="modalPlayerName">Joueur</h2>
+        </div>
+        <span class="close-button" onclick="closePlayerModal()">&times;</span>
+      </div>
+
+      <div id="modalPlayerStats">
+        <div class="player-stat">
+          <span class="stat-icon">🏆</span>
+          <span class="elo-value">0</span>
+        </div>
+        <div class="player-stat">
+          <span class="stat-icon">📊</span>
+          <span class="winrate-value">0%</span>
+        </div>
+        <div class="player-stat">
+          <span class="stat-icon">🎮</span>
+          <span>0</span>
+        </div>
+      </div>
+
+      <div class="modal-body">
+        <div class="modal-buttons">
+          <button id="requestGameBtn" class="game-button primary" onclick="requestGame()">
+            <span class="button-icon">⚔️</span>Demander un match
+          </button>
+          <button id="viewProfileBtn" class="game-button" onclick="viewProfile()">
+            <span class="button-icon">👤</span>Voir le profil
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="matchRequest" class="notification">
+    <div class="match-request-header">
+      <span>Demande de match</span>
+      <span class="close-button" onclick="declineMatch()">✕</span>
+    </div>
+
+    <div class="match-request-content">
+      <div class="challenger-info">
+        <div class="challenger-avatar" id="challengerAvatar">A</div>
+        <div class="challenger-details">
+          <div class="challenger-name" id="challengerName">Joueur</div>
+          <div class="challenger-stats">
+            <div class="challenger-stat">
+              <span class="stat-icon">🏆</span>
+              <span class="elo-value" id="challengerElo">0</span>
+            </div>
+            <div class="challenger-stat">
+              <span class="stat-icon">📊</span>
+              <span class="winrate-value" id="challengerWinrate">0%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="requestText">vous défie !</div>
+
+      <div class="notification-buttons">
+        <button onclick="acceptMatch()" class="accept-btn">Accepter</button>
+        <button onclick="declineMatch()" class="decline-btn">Refuser</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let activeGamesData = [];
+    let activeGamesUpdateInterval;
+    let recentTitleTransfers = [];
+
+    // Ajouter cette variable au début de votre script pour garder une trace des joueurs en ligne
+    let onlinePlayersData = [];
+
+    // Variables pour le suivi des messages
+    let unreadCount = 0;
+    // Au début du script, ajoutez une variable pour stocker le username courant
+    let currentUsername = "";
+    const socket = io();
+    let selectedPlayer = null;
+
+    // Ajoutez ce JavaScript à votre fichier existant
+    let adminLoggedIn = false;
+
+    // Fonction pour la connexion admin
+    function adminLogin() {
+      const username = document.getElementById('adminUsername').value;
+      const password = document.getElementById('adminPassword').value;
+
+      if (username === 'admin' && password === 'admin') {
+        adminLoggedIn = true;
+        document.getElementById('adminLoginContainer').style.display = 'none';
+        document.getElementById('adminInputContainer').style.display = 'flex';
+
+        // Optionnel : Notification de connexion réussie
+        alert('Connexion administrateur réussie');
+      } else {
+        alert('Identifiants administrateur incorrects');
+      }
+    }
+
+    // Fonction pour envoyer un message administratif
+    function sendAdminMessage() {
+      if (!adminLoggedIn) return;
+
+      const input = document.getElementById('adminChatInput');
+      const message = input.value.trim();
+
+      if (message) {
+        // Envoyer le message au serveur comme annonce administrative
+        socket.emit('sendAdminMessage', message);
+        input.value = '';
+        input.focus();
+      }
+    }
+
+    // Fonctions de base
+    function joinGame() {
+      const gameId = document.getElementById("gameId").value;
+      if (gameId) {
+        socket.emit("joinGame", gameId);
+      }
+    }
+
+    function requestGame() {
+      if (!selectedPlayer) {
+        console.error("Aucun joueur sélectionné");
+        return;
+      }
+
+      console.log("Sélection du joueur:", selectedPlayer);
+
+      // Vérifier si le joueur est en ligne avant d'envoyer la demande
+      if (!selectedPlayer.isOnline) {
+        alert("Ce joueur n'est pas en ligne actuellement.");
+        return;
+      }
+
+      // Vérifier si le joueur est en partie
+      if (selectedPlayer.inGame) {
+        alert("Ce joueur est déjà en partie.");
+        return;
+      }
+
+      console.log("Envoi d'une demande de match à:", selectedPlayer.username);
+
+      // Émettre l'événement requestMatch avec les informations nécessaires
+      socket.emit('requestMatch', {
+        toPlayer: selectedPlayer.username
+      });
+
+      // Afficher un message de confirmation
+      alert("Demande de match envoyée à " + selectedPlayer.username);
+
+      // Fermer la modal
+      closePlayerModal();
+    }
+
+    function closePlayerModal() {
+      document.getElementById('playerModal').style.display = 'none';
+      document.getElementById('modalBackdrop').style.display = 'none';
+    }
+
+    // Écouter les erreurs potentielles de demande de match
+    socket.on('matchRequestError', function (error) {
+      alert("Erreur lors de la demande de match: " + error.message);
+      console.error("Erreur de demande de match:", error);
+    });
+
+
+    // Fonction pour créer un élément d'avatar avec image si disponible
+    function createPlayerAvatar(username, isInGame) {
+      const avatarContainer = document.createElement("div");
+      avatarContainer.className = "player-avatar-container";
+
+      const avatarElement = document.createElement("div");
+      avatarElement.className = "player-avatar";
+
+      // Créer l'élément image
+      const imgElement = document.createElement("img");
+      imgElement.alt = username;
+      imgElement.style.display = "none"; // Caché par défaut
+
+      // Créer l'élément initial (lettre)
+      const initialElement = document.createElement("div");
+      initialElement.className = "player-initial";
+      initialElement.textContent = username.charAt(0).toUpperCase();
+
+      // Créer l'indicateur de statut
+      const statusIndicator = document.createElement("div");
+      statusIndicator.className =
+        "player-status-indicator " +
+        (isInGame ? "status-in-game" : "status-available");
+
+      // Assembler les éléments
+      avatarElement.appendChild(initialElement);
+      avatarElement.appendChild(imgElement);
+      avatarContainer.appendChild(avatarElement);
+      avatarContainer.appendChild(statusIndicator);
+
+      // Tenter de charger l'image
+      fetch(`/api/profile-photo/${username}`)
+        .then((response) => {
+          if (response.ok) return response.blob();
+          throw new Error("No photo");
+        })
+        .then((blob) => {
+          imgElement.src = URL.createObjectURL(blob);
+          imgElement.style.display = "block";
+          initialElement.style.display = "none";
+        })
+        .catch(() => {
+          // Pas d'image, l'initiale reste affichée
+        });
+
+      return avatarContainer;
+    }
+    // Fonction pour créer un élément avatar
+    function createAvatarElement(username, size = "normal") {
+      const className = size === "small" ? "message-avatar" : "title-avatar";
+      const avatarElement = document.createElement("div");
+      avatarElement.className = className;
+
+      // Ajouter l'initiale par défaut
+      avatarElement.textContent = username.charAt(0).toUpperCase();
+
+      // Tenter de charger la photo
+      fetch(`/api/profile-photo/${encodeURIComponent(username)}`)
+        .then((response) => {
+          if (response.ok) return response.blob();
+          throw new Error("Pas de photo");
+        })
+        .then((blob) => {
+          // Remplacer l'initiale par l'image
+          avatarElement.textContent = "";
+          const imgElement = document.createElement("img");
+          imgElement.src = URL.createObjectURL(blob);
+          imgElement.alt = username;
+          avatarElement.appendChild(imgElement);
+        })
+        .catch((error) => {
+          // Garder l'initiale affichée en cas d'erreur
+        });
+
+      return avatarElement;
+    }
+
+
+    // Fonction pour afficher/masquer le champ d'ID de partie
+    function toggleJoinGameInput() {
+      const container = document.getElementById("joinGameContainer");
+      if (container.style.display === "none") {
+        container.style.display = "block";
+        setTimeout(() => {
+          document.getElementById("gameId").focus();
+        }, 100);
+      } else {
+        container.style.display = "none";
+      }
+    }
+    // Fonction pour afficher une notification de transfert de titre
+    function showTitleNotification(data) {
+      const notificationsContainer = document.getElementById(
+        "notificationsContainer"
+      );
+
+      const notification = document.createElement("div");
+      notification.className = "title-notification";
+      notification.innerHTML = `
+        <span class="title-icon">${data.icon}</span>
+        <div class="title-message">
+            <span class="title-name">${escapeHtml(
+        data.from
+      )}</span> a perdu le titre 
+            <strong>${data.title}</strong> au profit de 
+            <span class="title-name">${escapeHtml(data.to)}</span>!
+        </div>
+        <span class="close-notification" onclick="this.parentElement.remove()">✕</span>
+    `;
+
+      notificationsContainer.appendChild(notification);
+
+      // Supprimer automatiquement après 10 secondes
+      setTimeout(() => {
+        if (notification.parentElement) {
+          notification.remove();
+        }
+      }, 10000);
+    }
+
+    // Fonction pour mettre à jour l'affichage des transferts récents
+    function updateRecentTitleTransfersDisplay() {
+      const container = document.getElementById('recentTitleTransfers');
+      if (!container) return;
+
+      if (recentTitleTransfers.length === 0) {
+        container.innerHTML = '<div class="no-transfers">Aucun transfert de titre récent</div>';
+        return;
+      }
+
+      container.innerHTML = '';
+
+      recentTitleTransfers.forEach(transfer => {
+        const transferItem = document.createElement('div');
+        transferItem.className = 'title-transfer-item';
+
+        // Créer les avatars avec la flèche
+        const avatarsContainer = document.createElement('div');
+        avatarsContainer.className = 'title-transfer-avatars';
+
+        // Avatar du perdant
+        const fromAvatar = createAvatarElement(transfer.from);
+        avatarsContainer.appendChild(fromAvatar);
+
+        // Flèche
+        const arrow = document.createElement('span');
+        arrow.className = 'title-transfer-arrow';
+        arrow.innerHTML = '&#10142;'; // Flèche droite
+        avatarsContainer.appendChild(arrow);
+
+        // Avatar du gagnant
+        const toAvatar = createAvatarElement(transfer.to);
+        avatarsContainer.appendChild(toAvatar);
+
+        // Ajouter l'icône du titre
+        const titleIcon = document.createElement('span');
+        titleIcon.className = 'title-icon';
+        titleIcon.textContent = transfer.icon;
+
+        // Créer le contenu textuel du transfert
+        const infoElement = document.createElement('div');
+        infoElement.className = 'transfer-info';
+        infoElement.innerHTML = `
+            <strong>${escapeHtml(transfer.to)}</strong> a conquis le titre 
+            <strong>${transfer.title}</strong> 
+            en battant <strong>${escapeHtml(transfer.from)}</strong>
+        `;
+
+        // Créer l'élément de temps
+        const timeElement = document.createElement('span');
+        timeElement.className = 'transfer-time';
+        timeElement.textContent = formatTime(transfer.time);
+
+        // Assembler tous les éléments
+        transferItem.appendChild(avatarsContainer);
+        transferItem.appendChild(titleIcon);
+        transferItem.appendChild(infoElement);
+        transferItem.appendChild(timeElement);
+
+        container.appendChild(transferItem);
+      });
+    }
+
+    // Fonction pour formater le temps d'un transfert
+    function formatTime(date) {
+      // Si c'est aujourd'hui
+      const now = new Date();
+      const today = now.toDateString();
+      const yesterday = new Date(now);
+      yesterday.setDate(now.getDate() - 1);
+
+      if (date.toDateString() === today) {
+        return `Aujourd'hui ${date.getHours()}:${date
+          .getMinutes()
+          .toString()
+          .padStart(2, "0")}`;
+      } else if (date.toDateString() === yesterday.toDateString()) {
+        return `Hier ${date.getHours()}:${date
+          .getMinutes()
+          .toString()
+          .padStart(2, "0")}`;
+      } else {
+        return `${date.getDate()}/${date.getMonth() + 1
+          } ${date.getHours()}:${date
+            .getMinutes()
+            .toString()
+            .padStart(2, "0")}`;
+      }
+    }
+
+    // Fonction générique pour afficher des notifications
+    function showTitleNotification(data) {
+      const notificationsContainer = document.getElementById('notificationsContainer');
+
+      const notification = document.createElement('div');
+      notification.className = 'title-notification';
+
+      // Créer les avatars avec la flèche
+      const avatarsContainer = document.createElement('div');
+      avatarsContainer.className = 'title-transfer-avatars';
+
+      // Avatar du perdant
+      const fromAvatar = createAvatarElement(data.from);
+      avatarsContainer.appendChild(fromAvatar);
+
+      // Flèche
+      const arrow = document.createElement('span');
+      arrow.className = 'title-transfer-arrow';
+      arrow.innerHTML = '&#10142;'; // Flèche droite
+      avatarsContainer.appendChild(arrow);
+
+      // Avatar du gagnant
+      const toAvatar = createAvatarElement(data.to);
+      avatarsContainer.appendChild(toAvatar);
+
+      // Ajouter le reste de la notification
+      const iconElement = document.createElement('span');
+      iconElement.className = 'title-icon';
+      iconElement.textContent = data.icon;
+
+      const messageElement = document.createElement('div');
+      messageElement.className = 'title-message';
+      messageElement.innerHTML = `
+        <span class="title-name">${escapeHtml(data.from)}</span> a perdu le titre 
+        <strong>${data.title}</strong> au profit de 
+        <span class="title-name">${escapeHtml(data.to)}</span>!
+    `;
+
+      const closeElement = document.createElement('span');
+      closeElement.className = 'close-notification';
+      closeElement.textContent = '✕';
+      closeElement.onclick = function () { this.parentElement.remove(); };
+
+      // Assembler la notification
+      notification.appendChild(avatarsContainer);
+      notification.appendChild(iconElement);
+      notification.appendChild(messageElement);
+      notification.appendChild(closeElement);
+
+      notificationsContainer.appendChild(notification);
+
+      // Supprimer automatiquement après 10 secondes
+      setTimeout(() => {
+        if (notification.parentElement) {
+          notification.remove();
+        }
+      }, 10000);
+    }
+
+    // Fonction pour changer d'onglet dans le chat
+    function switchTab(tabName) {
+      // Désactiver tous les onglets
+      document.querySelectorAll(".chat-tab").forEach((tab) => {
+        tab.classList.remove("active");
+      });
+      document.querySelectorAll(".tab-content").forEach((content) => {
+        content.classList.remove("active");
+      });
+
+      // Activer l'onglet sélectionné
+      document
+        .querySelector(`.chat-tab[onclick="switchTab('${tabName}')"]`)
+        .classList.add("active");
+      document.getElementById(`${tabName}Tab`).classList.add("active");
+
+      // Actions spécifiques selon l'onglet
+      if (tabName === "titles") {
+        socket.emit("getRecentTitleTransfers");
+      } else if (tabName === "admin") {
+        socket.emit("getAdminMessages");
+      }
+    }
+    function showActiveGames() {
+      document.getElementById("activeGamesModal").style.display = "block";
+      document.getElementById("modalBackdrop").style.display = "block";
+
+      // Charger les parties en cours
+      fetchActiveGames();
+
+      // Configurer une mise à jour automatique
+      if (activeGamesUpdateInterval) {
+        clearInterval(activeGamesUpdateInterval);
+      }
+      activeGamesUpdateInterval = setInterval(fetchActiveGames, 10000); // Mettre à jour toutes les 10 secondes
+    }
+
+    // Masquer la modale des parties en cours
+    function hideActiveGames() {
+      document.getElementById("activeGamesModal").style.display = "none";
+      document.getElementById("modalBackdrop").style.display = "none";
+
+      // Arrêter la mise à jour automatique
+      if (activeGamesUpdateInterval) {
+        clearInterval(activeGamesUpdateInterval);
+        activeGamesUpdateInterval = null;
+      }
+    }
+
+    // Récupérer les parties en cours
+    function fetchActiveGames() {
+      fetch("/api/active-games")
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(
+              "Erreur lors de la récupération des parties en cours"
+            );
+          }
+          return response.json();
+        })
+        .then((data) => {
+          activeGamesData = data;
+          updateActiveGamesDisplay();
+          updateLiveCount();
+        })
+        .catch((error) => {
+          console.error("Erreur:", error);
+          document.getElementById("active-games-container").innerHTML =
+            '<div class="loading-text">Erreur lors du chargement des parties</div>';
+        });
+    }
+
+    // Mettre à jour l'affichage des parties en cours
+    function updateActiveGamesDisplay() {
+      const container = document.getElementById("active-games-container");
+
+      if (!activeGamesData || activeGamesData.length === 0) {
+        container.innerHTML =
+          '<div class="no-games">Aucune partie en cours</div>';
+        return;
+      }
+
+      container.innerHTML = activeGamesData
+        .map(
+          (game) => `
+      <div class="active-game-card">
+        <div class="game-players">
+          <span>${game.player1}</span>
+          <span>vs</span>
+          <span>${game.player2}</span>
+        </div>
+        <div class="game-scores">
+          <span class="score-red">${game.scoreRed}</span>
+          <span>-</span>
+          <span class="score-blue">${game.scoreBlue}</span>
+        </div>
+        <button onclick="spectateGame('${game.id}')" class="game-button watch">
+          <span class="button-icon">👁️</span> Regarder
+        </button>
+        <div class="spectator-count">
+          <span class="button-icon">👥</span> ${game.spectatorCount}
+        </div>
+      </div>
+    `
+        )
+        .join("");
+    }
+
+    // Mettre à jour le compteur de parties en direct
+    function updateLiveCount() {
+      const countElement = document.getElementById("live-game-count");
+      if (countElement) {
+        countElement.textContent = activeGamesData.length;
+      }
+    }
+
+    // Rejoindre une partie en tant que spectateur
+    function spectateGame(gameId) {
+      if (!gameId) return;
+
+      // Émettre l'événement pour rejoindre en tant que spectateur
+      socket.emit("spectateGame", gameId);
+
+      // Masquer la modale
+      hideActiveGames();
+    }
+
+    // Fonction pour mettre à jour le badge de messages non lus
+    function updateUnreadBadge() {
+      const badge = document.getElementById("unreadBadge");
+      if (unreadCount > 0) {
+        badge.textContent = unreadCount > 99 ? "99+" : unreadCount;
+        badge.style.display = "inline-block";
+      } else {
+        badge.style.display = "none";
+      }
+    }
+
+    // Gestion des modales
+    function showPlayers() {
+      document.getElementById("playersModal").style.display = "block";
+      document.getElementById("modalBackdrop").style.display = "block";
+    }
+
+    function hidePlayers() {
+      document.getElementById("playersModal").style.display = "none";
+      document.getElementById("modalBackdrop").style.display = "none";
+    }
+
+    function showLeaderboard() {
+      document.getElementById("leaderboardModal").style.display = "block";
+      document.getElementById("modalBackdrop").style.display = "block";
+    }
+
+    function hideLeaderboard() {
+      document.getElementById("leaderboardModal").style.display = "none";
+      document.getElementById("modalBackdrop").style.display = "none";
+    }
+    function showChat() {
+      document.getElementById("chatModal").style.display = "block";
+      document.getElementById("modalBackdrop").style.display = "block";
+
+      // Récupérer l'historique
+      socket.emit("getGlobalChatHistory");
+
+      // Marquer les messages comme lus
+      socket.emit("markMessagesAsRead");
+      unreadCount = 0;
+      updateUnreadBadge();
+
+      setTimeout(() => {
+        document.getElementById("globalChatInput").focus();
+      }, 100);
+    }
+
+    function hideChat() {
+      document.getElementById("chatModal").style.display = "none";
+      document.getElementById("modalBackdrop").style.display = "none";
+    }
+
+    // Au moment de marquer les messages comme lus
+    function markMessagesAsRead(lastMessageId) {
+      localStorage.setItem("lastSeenMessageId", lastMessageId);
+      socket.emit("markMessagesAsRead");
+    }
+
+    // Au chargement de la page
+    function initializeUnreadCounter() {
+      const lastSeen = localStorage.getItem("lastSeenMessageId");
+      if (lastSeen) {
+        // Envoyer cette information au serveur
+        socket.emit("setLastSeen", parseInt(lastSeen));
+      }
+    }
+
+    function sendGlobalMessage() {
+      const input = document.getElementById("globalChatInput");
+      const message = input.value.trim();
+
+      if (message) {
+        socket.emit("sendGlobalMessage", message);
+        input.value = "";
+        input.focus();
+      }
+    }
+
+    // Ajouter le gestionnaire d'événements pour la touche Entrée
+    document
+      .getElementById("globalChatInput")
+      .addEventListener("keypress", function (e) {
+        if (e.key === "Enter") {
+          sendGlobalMessage();
+        }
+      });
+
+    // Écoute de l'événement titleClaimed pour le gagnant
+    socket.on("titleClaimed", function (data) {
+      console.log("Titre réclamé:", data);
+      showNotification(
+        `Vous avez conquis le titre ${data.title} ${data.icon} en battant ${data.previousHolder}!`,
+        "success",
+        data.icon
+      );
+    });
+
+    // Écoute de l'événement titleLost pour le perdant
+    socket.on("titleLost", function (data) {
+      console.log("Titre perdu:", data);
+      showNotification(
+        `Vous avez perdu le titre ${data.title} ${data.icon} au profit de ${data.newHolder}!`,
+        "warning",
+        data.icon
+      );
+    });
+
+    // Écoute de l'événement titleTransferred pour tous les joueurs
+    socket.on("titleTransferred", function (data) {
+      // Ajouter au chat global
+      console.log("Transfert de titre:", data);
+      if (document.getElementById("globalChatMessages")) {
+        const systemMessage = {
+          username: "Système",
+          text: `${data.from} a perdu le titre ${data.title} ${data.icon} au profit de ${data.to}!`,
+          timestamp: new Date(),
+          isSystem: true,
+        };
+        displayGlobalMessage(systemMessage);
+      }
+
+      // Afficher une notification si on n'est pas déjà dans le chat
+      if (document.getElementById("chatModal").style.display !== "block") {
+        showTitleNotification(data);
+      }
+
+      // Ajouter à la liste des transferts récents
+      recentTitleTransfers.unshift({
+        from: data.from,
+        to: data.to,
+        title: data.title,
+        icon: data.icon,
+        time: new Date(),
+      });
+
+      // Limiter à 10 transferts récents
+      if (recentTitleTransfers.length > 10) {
+        recentTitleTransfers.pop();
+      }
+
+      // Mettre à jour l'affichage si l'onglet est ouvert
+      updateRecentTitleTransfersDisplay();
+    });
+
+    // Événement pour recevoir l'historique des transferts récents
+    socket.on("recentTitleTransfers", function (transfers) {
+      console.log("Historique des transferts reçu:", transfers);
+      recentTitleTransfers = transfers.map((t) => ({
+        from: t.from_username,
+        to: t.to_username,
+        title: t.achievement_title,
+        icon: t.achievement_icon,
+        time: new Date(t.transferred_at),
+      }));
+
+      updateRecentTitleTransfersDisplay();
+    });
+
+    // Recevoir la confirmation que l'on a rejoint en tant que spectateur
+    socket.on("gameSpectated", (data) => {
+      // Stocker l'ID de partie pour savoir qu'on est spectateur
+      localStorage.setItem("spectatingGameId", data.gameId);
+
+      // Rediriger vers la page du jeu
+      window.location.href = "/game?spectator=true";
+    });
+
+    // Initialisation: récupérer périodiquement le nombre de parties en cours
+    document.addEventListener("DOMContentLoaded", function () {
+      // Charger initialement les parties en cours pour le compteur
+      fetchActiveGames();
+
+      // Mettre à jour périodiquement le compteur
+      setInterval(() => {
+        if (
+          !document.getElementById("activeGamesModal").style.display ===
+          "block"
+        ) {
+          fetch("/api/active-games")
+            .then((response) => response.json())
+            .then((data) => {
+              activeGamesData = data;
+              updateLiveCount();
+            })
+            .catch((error) => console.error("Erreur:", error));
+        }
+      }, 30000); // Toutes les 30 secondes
+
+      // Demander au serveur les transferts récents au chargement
+      setTimeout(() => {
+        socket.emit("getRecentTitleTransfers");
+      }, 1000);
+    });
+
+    // Ajouter au gestionnaire d'événements existant
+    document.getElementById("modalBackdrop").onclick = () => {
+      hidePlayers();
+      hideLeaderboard();
+      hideChat();
+      hideActiveGames(); // Ajouter cette ligne
+      closePlayerModal();
+      closeProfileModal();
+    };
+
+    // Recevoir les messages
+    socket.on("globalChatMessage", function (message) {
+      // Si le chat n'est pas ouvert, incrémenter le compteur
+      if (document.getElementById("chatModal").style.display !== "block") {
+        unreadCount++;
+        updateUnreadBadge();
+      }
+
+      // Afficher le message comme avant
+      displayGlobalMessage(message);
+    });
+
+    socket.on('adminMessages', function (messages) {
+      const container = document.getElementById('adminMessages');
+      container.innerHTML = '';
+
+      if (!messages || messages.length === 0) {
+        container.innerHTML = '<div class="no-admin-messages">Aucune annonce pour le moment</div>';
+        return;
+      }
+
+      messages.forEach(message => {
+        displayAdminMessage(message);
+      });
+    });
+
+    socket.on("unreadMessageCount", function (count) {
+      unreadCount = count;
+      updateUnreadBadge();
+    });
+
+    // Demander le nombre de messages non lus au chargement de la page
+    document.addEventListener("DOMContentLoaded", function () {
+      // Attendre que la connexion socket soit établie
+      setTimeout(() => {
+        socket.emit("getUnreadMessageCount");
+      }, 1000);
+    });
+
+    // Mettre à jour le compteur périodiquement
+    setInterval(() => {
+      if (document.getElementById("chatModal").style.display !== "block") {
+        socket.emit("getUnreadMessageCount");
+      }
+    }, 30000); // Toutes les 30 secondes
+
+    // Recevoir l'historique des messages
+    socket.on("globalChatHistory", function (messages) {
+      const chatContainer = document.getElementById("globalChatMessages");
+      chatContainer.innerHTML = "";
+
+      if (!messages || messages.length === 0) {
+        chatContainer.innerHTML =
+          '<div class="loading-text">Aucun message. Soyez le premier à écrire !</div>';
+      } else {
+        messages.forEach((message) => {
+          displayGlobalMessage(message);
+        });
+      }
+
+      // Défilement vers le bas
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    });
+
+    // Socket event pour recevoir un nouveau message administratif
+    // Mise à jour pour les notifications
+    socket.on('newAdminMessage', function (message) {
+      displayAdminMessage(message);
+
+      // Notification pour alerter les utilisateurs d'une nouvelle annonce
+      if (document.getElementById('adminTab').classList.contains('active') === false) {
+        const notificationsContainer = document.getElementById('notificationsContainer');
+
+        const notification = document.createElement('div');
+        notification.className = 'admin-notification';
+        notification.innerHTML = `
+      <span class="admin-icon">📢</span>
+      <div class="admin-notification-message">
+        <strong>Nouvelle annonce administrative:</strong><br>
+        ${formatLinks(escapeHtml(message.text))}
+      </div>
+      <span class="close-notification" onclick="this.parentElement.remove()">✕</span>
+    `;
+
+        notificationsContainer.appendChild(notification);
+
+        // Supprimer automatiquement après 15 secondes
+        setTimeout(() => {
+          if (notification.parentElement) {
+            notification.remove();
+          }
+        }, 15000);
+      }
+    });
+    // Nouveau style CSS pour les liens cliquables
+// Ajoutez ces styles CSS
+document.head.appendChild(document.createElement("style")).textContent = `
+  .clickable-link {
+    color: #0056b3;
+    text-decoration: underline;
+    cursor: pointer;
+    word-break: break-all;
+  }
+  
+  .admin-notification .clickable-link {
+    color: #ffffff;
+    font-weight: bold;
+    text-decoration: underline;
+  }
+  
+  .admin-message .clickable-link:hover,
+  .admin-notification .clickable-link:hover {
+    text-decoration: none;
+  }
+.admin-container {
+    display: flex;
+    flex-direction: column;
+    height: 400px;
+    margin-top: 20px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  
+  .admin-messages {
+    flex-grow: 1;
+    padding: 15px;
+    overflow-y: auto;
+    background-color: #f8f9fa;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .admin-login-container {
+    padding: 15px;
+    background-color: white;
+    border-top: 1px solid #ddd;
+  }
+  
+  .admin-login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .admin-input-container {
+    display: flex;
+    padding: 10px;
+    background-color: white;
+    border-top: 1px solid #ddd;
+  }
+  
+  #adminChatInput {
+    flex-grow: 1;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-right: 8px;
+  }
+  
+  #sendAdminMessage {
+    padding: 8px 16px;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s;
+  }
+  
+  #sendAdminMessage:hover {
+    background-color: #c82333;
+  }
+  
+  .admin-message {
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 8px;
+    padding: 12px;
+    color: #721c24;
+  }
+  
+  .admin-message-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 12px;
+  }
+  
+  .admin-icon {
+    font-size: 16px;
+  }
+  
+  .admin-message-content {
+    font-weight: 500;
+    white-space: pre-wrap;
+  }
+  
+  .no-admin-messages {
+    color: #666;
+    font-style: italic;
+    text-align: center;
+    padding: 20px;
+  }
+  
+  .admin-notification {
+    position: relative;
+    background-color: rgba(220, 53, 69, 0.9);
+    color: white;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    animation: slideIn 0.5s ease-out;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+  
+  .admin-notification .admin-icon {
+    font-size: 24px;
+    margin-right: 15px;
+  }
+  
+  .admin-notification-message {
+    flex-grow: 1;
+  }
+  
+  .admin-notification .close-notification {
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.3s;
+  }
+  
+  .admin-notification .close-notification:hover {
+    opacity: 1;
+  }
+`;
+
+    // Afficher un message administratif
+    // Fonction pour rendre les liens cliquables
+    function formatLinks(text) {
+      // Regex pour détecter les URLs
+      const urlRegex = /(https?:\/\/[^\s]+)|(www\.[^\s]+)/g;
+
+      // Remplacer les URLs par des liens cliquables
+      return text.replace(urlRegex, function (url) {
+        // Ajouter http:// devant les urls qui commencent par www.
+        const href = url.startsWith('www.') ? 'http://' + url : url;
+        return `<a href="${href}" target="_blank" class="clickable-link">${url}</a>`;
+      });
+    }
+
+    // Mise à jour de la fonction displayAdminMessage pour rendre les liens cliquables
+    function displayAdminMessage(message) {
+      const container = document.getElementById('adminMessages');
+
+      const messageElement = document.createElement('div');
+      messageElement.className = 'admin-message';
+
+      // Formater la date
+      const time = new Date(message.timestamp);
+      const formattedDate = time.toLocaleDateString() + ' ' + time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      messageElement.innerHTML = `
+    <div class="admin-message-header">
+      <div class="admin-icon">📢</div>
+      <div class="admin-time">${formattedDate}</div>
+    </div>
+    <div class="admin-message-content">${formatLinks(escapeHtml(message.text))}</div>
+  `;
+
+      container.appendChild(messageElement);
+    }
+
+    // Fonction pour afficher un message
+    // Mise à jour pour les messages normaux du chat global aussi
+    function displayGlobalMessage(message) {
+      const chatContainer = document.getElementById('globalChatMessages');
+      const loadingText = chatContainer.querySelector('.loading-text');
+      if (loadingText) {
+        chatContainer.removeChild(loadingText);
+      }
+
+      const isMyMessage = message.username === currentUsername;
+      const messageClass = isMyMessage ? 'my-message' : 'other-message';
+
+      const messageElement = document.createElement('div');
+      messageElement.className = `chat-message ${messageClass}`;
+      messageElement.dataset.messageId = message.id;
+
+      // Créer l'avatar seulement pour les messages des autres utilisateurs
+      if (!message.isSystem && !isMyMessage) {
+        const avatarElement = document.createElement('div');
+        avatarElement.className = 'message-avatar';
+        avatarElement.textContent = message.username.charAt(0).toUpperCase();
+
+        // Essayer de charger la photo de profil
+        fetch(`/api/profile-photo/${encodeURIComponent(message.username)}`)
+          .then(response => {
+            if (response.ok) return response.blob();
+            throw new Error('Pas de photo');
+          })
+          .then(blob => {
+            avatarElement.textContent = '';
+            const imgElement = document.createElement('img');
+            imgElement.src = URL.createObjectURL(blob);
+            imgElement.alt = message.username;
+            avatarElement.appendChild(imgElement);
+          })
+          .catch(error => {
+            // Garder l'initiale affichée en cas d'erreur
+          });
+
+        messageElement.appendChild(avatarElement);
+      }
+
+      // Créer la bulle de message
+      const messageBubble = document.createElement('div');
+      messageBubble.className = 'message-bubble';
+
+      // Gestion du format de date
+      const time = new Date(message.timestamp);
+      const formattedTime = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      // Structure différente selon que c'est notre message ou celui d'un autre
+      if (isMyMessage) {
+        // Pour mes propres messages : pas de nom d'utilisateur
+        messageBubble.innerHTML = `
+        <div class="message-text">${formatLinks(escapeHtml(message.text))}</div>
+        <div class="message-time">${formattedTime}</div>
+    `;
+      } else {
+        // Pour les messages des autres : inclure le nom d'utilisateur
+        messageBubble.innerHTML = `
+        ${!message.isSystem ? `<div class="message-username">${escapeHtml(message.username)}</div>` : ''}
+        <div class="message-text">${formatLinks(escapeHtml(message.text))}</div>
+        <div class="message-time">${formattedTime}</div>
+    `;
+      }
+
+      messageElement.appendChild(messageBubble);
+      chatContainer.appendChild(messageElement);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+
+    // Fonction d'échappement HTML pour sécuriser les messages
+    function escapeHtml(text) {
+      return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+    function viewProfile() {
+      const username = document.getElementById("modalPlayerName").textContent;
+      window.location.href = `/profile/${encodeURIComponent(username)}`;
+    }
+    function handlePlayerClick(playerUsername, isInGame) {
+      // Trouver les données complètes du joueur
+      const playerData = onlinePlayersData.find(p => p.username === playerUsername);
+
+      if (!playerData) return;
+
+      selectedPlayer = {
+        username: playerUsername,
+        isOnline: true,
+        inGame: isInGame,
+        elo: playerData.elo,
+        winRate: playerData.winRate,
+        gamesPlayed: playerData.gamesPlayed,
+        hasPhoto: playerData.hasPhoto
+      };
+
+      // Mettre à jour la modal avec les informations détaillées
+      const modal = document.getElementById('playerModal');
+
+      // Mise à jour du titre de la modal avec le nom du joueur
+      document.getElementById('modalPlayerName').textContent = playerUsername;
+
+      // Ajouter un avatar au titre de la modal
+      const avatarContainer = document.getElementById('modalPlayerAvatar');
+      if (!avatarContainer) {
+        // Si le conteneur n'existe pas encore, le créer
+        const headerElement = modal.querySelector('.modal-content h2');
+        const avatarElement = document.createElement('div');
+        avatarElement.id = 'modalPlayerAvatar';
+        avatarElement.className = 'player-avatar';
+        avatarElement.style.width = '40px';
+        avatarElement.style.height = '40px';
+        avatarElement.style.marginRight = '10px';
+
+        // Mettre le nom et l'avatar côte à côte
+        const headerContainer = document.createElement('div');
+        headerContainer.style.display = 'flex';
+        headerContainer.style.alignItems = 'center';
+
+        // Remplacer le titre par notre nouveau conteneur
+        headerElement.parentNode.replaceChild(headerContainer, headerElement);
+
+        // Ajouter l'avatar et le titre au conteneur
+        headerContainer.appendChild(avatarElement);
+        headerContainer.appendChild(headerElement);
+      }
+
+      // Mettre à jour l'avatar de la modal
+      const avatarElement = document.getElementById('modalPlayerAvatar');
+      if (selectedPlayer.hasPhoto) {
+        // Encoder le nom d'utilisateur dans l'URL de l'image
+        avatarElement.innerHTML = `<img src="/api/profile-photo/${encodeURIComponent(playerUsername)}" alt="${escapeHtml(playerUsername)}" style="width:100%;height:100%;object-fit:cover;">`;
+      } else {
+        avatarElement.textContent = playerUsername.charAt(0).toUpperCase();
+      }
+
+      // Ajouter les statistiques du joueur
+      let statsElement = document.getElementById('modalPlayerStats');
+      if (!statsElement) {
+        statsElement = document.createElement('div');
+        statsElement.id = 'modalPlayerStats';
+        statsElement.className = 'player-stats';
+        statsElement.style.justifyContent = 'center';
+        statsElement.style.fontSize = '14px';
+        statsElement.style.margin = '10px 0';
+
+        // Insérer les stats après le titre
+        const title = modal.querySelector('h2');
+        title.parentNode.insertBefore(statsElement, title.nextSibling);
+      }
+
+      // Mettre à jour les statistiques
+      statsElement.innerHTML = `
+        <div class="player-stat">
+            <span class="stat-icon">🏆</span>
+            <span class="elo-value">${selectedPlayer.elo || 0}</span>
+        </div>
+        <div class="player-stat">
+            <span class="stat-icon">📊</span>
+            <span class="winrate-value">${selectedPlayer.winRate || 0}%</span>
+        </div>
+        <div class="player-stat">
+            <span class="stat-icon">🎮</span>
+            <span>${selectedPlayer.gamesPlayed || 0}</span>
+        </div>
+    `;
+
+      // Utiliser currentUsername pour la comparaison
+      const requestGameBtn = document.getElementById('requestGameBtn');
+      if (playerUsername === currentUsername) {
+        requestGameBtn.style.display = 'none';
+      } else {
+        requestGameBtn.style.display = 'block';
+
+        // Désactiver le bouton si le joueur est en partie
+        if (isInGame) {
+          requestGameBtn.disabled = true;
+          requestGameBtn.classList.add('disabled');
+          requestGameBtn.title = 'Joueur en partie';
+        } else {
+          requestGameBtn.disabled = false;
+          requestGameBtn.classList.remove('disabled');
+          requestGameBtn.title = '';
+        }
+      }
+
+      modal.style.display = 'block';
+      document.getElementById('modalBackdrop').style.display = 'block';
+    }
+
+    // Fonction pour charger les informations du joueur qui défie
+    function loadChallengerInfo(username) {
+      // Mettre à jour le nom immédiatement
+      document.getElementById('challengerName').textContent = username;
+
+      // Mettre à jour l'initiale dans l'avatar
+      const avatarElement = document.getElementById('challengerAvatar');
+      avatarElement.textContent = username.charAt(0).toUpperCase();
+
+      // Essayer de charger la photo de profil avec le nom d'utilisateur encodé
+      fetch(`/api/profile-photo/${encodeURIComponent(username)}`)
+        .then(response => {
+          if (response.ok) return response.blob();
+          throw new Error('Pas de photo');
+        })
+        .then(blob => {
+          // Remplacer l'initiale par l'image
+          avatarElement.textContent = '';
+          const imgElement = document.createElement('img');
+          imgElement.src = URL.createObjectURL(blob);
+          imgElement.alt = username;
+          avatarElement.appendChild(imgElement);
+        })
+        .catch(error => {
+          // Garder l'initiale affichée en cas d'erreur
+        });
+
+      // Récupérer les statistiques du joueur
+      fetch(`/api/player-stats/${encodeURIComponent(username)}`)
+        .then(response => response.json())
+        .then(data => {
+          // Mettre à jour l'ELO et le taux de victoire
+          document.getElementById('challengerElo').textContent = data.elo || 0;
+          document.getElementById('challengerWinrate').textContent = `${data.winRate || 0}%`;
+        })
+        .catch(error => {
+          console.error('Erreur lors de la récupération des statistiques:', error);
+        });
+    }
+
+
+    // Modifier la fonction existante qui affiche la demande de match
+    function showMatchRequest(fromPlayer) {
+      // Charger les informations du joueur
+      loadChallengerInfo(fromPlayer);
+
+      // Afficher la notification
+      document.getElementById('matchRequest').style.display = 'block';
+    }
+
+    function acceptMatch() {
+      socket.emit("acceptMatch");
+      document.getElementById("matchRequest").style.display = "none";
+    }
+
+    function declineMatch() {
+      socket.emit("declineMatch");
+      document.getElementById("matchRequest").style.display = "none";
+    }
+
+    // Ajouter cette nouvelle fonction pour gérer les clics sur les joueurs du classement
+    function handleLeaderboardPlayerClick(player) {
+      // Utiliser directement les données du joueur reçues du serveur
+      selectedPlayer = {
+        username: player.username,
+        isOnline: player.isOnline,
+        inGame: player.inGame,
+        elo: player.score,
+        winRate: player.winRate,
+        gamesPlayed: player.games_played,
+        hasPhoto: player.hasPhoto
+      };
+
+      // Mettre à jour la modal avec les informations détaillées
+      const modal = document.getElementById('playerModal');
+
+      // Mise à jour du titre de la modal avec le nom du joueur
+      document.getElementById('modalPlayerName').textContent = player.username;
+
+      // Mettre à jour l'avatar de la modal
+      const avatarElement = document.getElementById('modalPlayerAvatar');
+      if (player.hasPhoto) {
+        avatarElement.innerHTML = `<img src="/api/profile-photo/${player.username}" alt="${player.username}" style="width:100%;height:100%;object-fit:cover;">`;
+      } else {
+        avatarElement.textContent = player.username.charAt(0).toUpperCase();
+      }
+
+      // Mettre à jour les statistiques
+      const statsElement = document.getElementById('modalPlayerStats');
+      statsElement.innerHTML = `
+        <div class="player-stat">
+            <span class="stat-icon">🏆</span>
+            <span class="elo-value">${player.score || 0}</span>
+        </div>
+        <div class="player-stat">
+            <span class="stat-icon">📊</span>
+            <span class="winrate-value">${player.winRate || 0}%</span>
+        </div>
+        <div class="player-stat">
+            <span class="stat-icon">🎮</span>
+            <span>${player.games_played || 0}</span>
+        </div>
+    `;
+
+      // Gestion du bouton Demander un match
+      const requestGameBtn = document.getElementById('requestGameBtn');
+      if (player.username === currentUsername) {
+        requestGameBtn.style.display = 'none';
+      } else {
+        requestGameBtn.style.display = 'block';
+
+        // Désactiver le bouton si le joueur n'est pas en ligne ou est en partie
+        if (!player.isOnline || player.inGame) {
+          requestGameBtn.disabled = true;
+          requestGameBtn.classList.add('disabled');
+          requestGameBtn.title = !player.isOnline
+            ? "Joueur hors ligne"
+            : "Joueur en partie";
+        } else {
+          requestGameBtn.disabled = false;
+          requestGameBtn.classList.remove('disabled');
+          requestGameBtn.title = '';
+        }
+      }
+
+      modal.style.display = 'block';
+      document.getElementById('modalBackdrop').style.display = 'block';
+    }
+
+    // Socket.io event listeners
+    socket.on("connect", () => {
+      console.log("Socket connecté, ID:", socket.id);
+      socket.emit("requestOnlinePlayers");
+      socket.emit("requestLeaderboard");
+    });
+
+    // Après la création du socket, ajoutez :
+    fetch("/check-session")
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.authenticated) {
+          currentUsername = data.username;
+        }
+      });
+
+    socket.on("updateOnlinePlayers", (players) => {
+      // Stocker les données des joueurs pour un accès global
+      onlinePlayersData = players || [];
+
+      const container = document.getElementById('online-players');
+      const playerCount = document.getElementById('online-player-count');
+
+      // Mettre à jour le compteur sur le bouton
+      playerCount.textContent = players ? players.length : 0;
+
+      if (!players || players.length === 0) {
+        container.innerHTML = '<div class="player-card">Aucun joueur en ligne</div>';
+        return;
+      }
+
+      // Vider le conteneur
+      container.innerHTML = '';
+
+      // Ajouter chaque joueur avec des informations enrichies
+      players.forEach(player => {
+        const playerCard = document.createElement('div');
+        playerCard.className = 'player-card';
+        playerCard.onclick = () => handlePlayerClick(player.username, player.inGame);
+
+        // Créer le conteneur d'avatar
+        const avatarContainer = document.createElement('div');
+        avatarContainer.className = 'player-avatar-container';
+
+        const avatarElement = document.createElement('div');
+        avatarElement.className = 'player-avatar';
+
+        // Créer l'élément d'avatar en fonction de la présence d'une photo
+        if (player.hasPhoto) {
+          const imgElement = document.createElement('img');
+          imgElement.src = `/api/profile-photo/${player.username}`;
+          imgElement.alt = player.username;
+          avatarElement.appendChild(imgElement);
+        } else {
+          // Utiliser l'initiale
+          avatarElement.textContent = player.username.charAt(0).toUpperCase();
+        }
+
+        // Créer l'indicateur de statut
+        const statusIndicator = document.createElement('div');
+        statusIndicator.className = 'player-status-indicator ' +
+          (player.inGame ? 'status-in-game' : 'status-available');
+
+        // Assembler le conteneur d'avatar
+        avatarContainer.appendChild(avatarElement);
+        avatarContainer.appendChild(statusIndicator);
+
+        // Créer les informations du joueur avec les statistiques
+        const playerInfo = document.createElement('div');
+        playerInfo.className = 'player-info';
+
+        const playerName = document.createElement('div');
+        playerName.className = 'player-name';
+        playerName.textContent = player.username;
+
+
+
+        // Statistiques du joueur
+        const playerStats = document.createElement('div');
+        playerStats.className = 'player-stats';
+
+        // ELO
+        const eloStat = document.createElement('div');
+        eloStat.className = 'player-stat';
+        eloStat.innerHTML = `<span class="stat-icon">🏆</span><span class="elo-value">${player.elo || 0}</span>`;
+        playerStats.appendChild(eloStat);
+
+        // Taux de victoire
+        const winrateStat = document.createElement('div');
+        winrateStat.className = 'player-stat';
+        winrateStat.innerHTML = `<span class="stat-icon">📊</span><span class="winrate-value">${player.winRate || 0}%</span>`;
+        playerStats.appendChild(winrateStat);
+
+        // Parties jouées
+        const gamesStat = document.createElement('div');
+        gamesStat.className = 'player-stat';
+        gamesStat.innerHTML = `<span class="stat-icon">🎮</span><span>${player.gamesPlayed || 0}</span>`;
+        playerStats.appendChild(gamesStat);
+
+        // Assembler les informations du joueur
+        playerInfo.appendChild(playerName);
+        playerInfo.appendChild(playerStats);
+
+        // Assembler la carte du joueur
+        playerCard.appendChild(avatarContainer);
+        playerCard.appendChild(playerInfo);
+
+        container.appendChild(playerCard);
+      });
+
+      document.querySelector('#playersModal h2').textContent =
+        `Joueurs en ligne (${players.length})`;
+    });
+
+    // Modifier également la fonction pour le classement
+    socket.on('updateLeaderboard', (leaderboard) => {
+      const tbody = document.getElementById('leaderboard');
+
+      if (!leaderboard || leaderboard.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="4" class="loading-text">Aucune donnée disponible</td>
+            </tr>`;
+        return;
+      }
+
+      tbody.innerHTML = '';
+
+      // Créer chaque ligne du classement
+      leaderboard.forEach((player, index) => {
+        // Définir l'icône ou le numéro en fonction du rang
+        let rankDisplay;
+        switch (index) {
+          case 0:
+            rankDisplay = '<span class="rank-icon">🏆</span>';
+            break;
+          case 1:
+            rankDisplay = '<span class="rank-icon">🥈</span>';
+            break;
+          case 2:
+            rankDisplay = '<span class="rank-icon">🥉</span>';
+            break;
+          default:
+            rankDisplay = `<span class="rank-number">${index + 1}</span>`;
+        }
+
+        // Indicateur de statut en ligne
+        const onlineIndicator = player.isOnline
+          ? '<span class="online-indicator" title="En ligne"></span>'
+          : '';
+
+        // Créer la ligne
+        const row = document.createElement('tr');
+        row.className = 'player-row';
+        row.onclick = () => handleLeaderboardPlayerClick(player);
+
+        // Créer l'avatar avec les informations directement du serveur
+        const avatarElement = document.createElement('div');
+        avatarElement.className = 'small-avatar';
+
+        if (player.hasPhoto) {
+          // Si le joueur a une photo, créer une image
+          const imgElement = document.createElement('img');
+          imgElement.src = `/api/profile-photo/${player.username}`;
+          imgElement.alt = player.username;
+          imgElement.style.width = '100%';
+          imgElement.style.height = '100%';
+          imgElement.style.objectFit = 'cover';
+          avatarElement.appendChild(imgElement);
+        } else {
+          // Sinon, afficher l'initiale
+          avatarElement.textContent = player.username.charAt(0).toUpperCase();
+        }
+
+        // Remplir la ligne avec les données du joueur
+        row.innerHTML = `
+            <td>${rankDisplay}</td>
+            <td class="player-name-cell">
+                <div class="leaderboard-player-info">
+                    ${avatarElement.outerHTML}
+                    <span>${player.username} ${onlineIndicator}</span>
+                </div>
+            </td>
+            <td>${player.score || 0}</td>
+            <td>${player.games_played || 0}</td>
+        `;
+
+        tbody.appendChild(row);
+      });
+    });
+    // Ajouter ces styles pour le classement
+    document.head.appendChild(document.createElement("style")).textContent = `
+        .player-name-cell {
+            min-width: 150px;
+        }
+        
+        .leaderboard-player-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .small-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: #565681;
+            color: white;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 14px;
+            overflow: hidden;
+        }
+    `;
+
+    // Ajouter ce style CSS pour l'indicateur en ligne
+    const styleOnlineIndicator = document.createElement("style");
+    styleOnlineIndicator.textContent = `
+    .online-indicator {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        background-color: #4CAF50;
+        border-radius: 50%;
+        margin-left: 8px;
+        position: relative;
+        top: -1px;
+    }
+    
+    /* Animation de pulsation (optionnelle) */
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+    
+    .online-indicator {
+        animation: pulse 2s infinite;
+    }
+`;
+    document.head.appendChild(styleOnlineIndicator);
+
+    socket.on('matchRequest', (data) => {
+      // Mettre à jour les informations du joueur qui défie
+      document.getElementById('challengerName').textContent = data.fromPlayer;
+
+      // Mettre à jour l'initiale dans l'avatar
+      const avatarElement = document.getElementById('challengerAvatar');
+      avatarElement.textContent = data.fromPlayer.charAt(0).toUpperCase();
+
+      // Essayer de charger la photo de profil
+      fetch(`/api/profile-photo/${data.fromPlayer}`)
+        .then(response => {
+          if (response.ok) return response.blob();
+          throw new Error('Pas de photo');
+        })
+        .then(blob => {
+          // Remplacer l'initiale par l'image
+          avatarElement.textContent = '';
+          const imgElement = document.createElement('img');
+          imgElement.src = URL.createObjectURL(blob);
+          imgElement.alt = data.fromPlayer;
+          avatarElement.appendChild(imgElement);
+        })
+        .catch(error => {
+          // Garder l'initiale affichée en cas d'erreur
+        });
+
+      // Mettre à jour les statistiques si disponibles
+      if (data.stats) {
+        document.getElementById('challengerElo').textContent = data.stats.elo || 0;
+        document.getElementById('challengerWinrate').textContent = `${data.stats.winRate || 0}%`;
+      } else {
+        // Si les statistiques ne sont pas disponibles, les récupérer par API
+        fetch(`/api/player-stats/${data.fromPlayer}`)
+          .then(response => response.json())
+          .then(stats => {
+            document.getElementById('challengerElo').textContent = stats.elo || 0;
+            document.getElementById('challengerWinrate').textContent = `${stats.winRate || 0}%`;
+          })
+          .catch(error => {
+            console.error('Erreur lors de la récupération des statistiques:', error);
+            // Valeurs par défaut en cas d'erreur
+            document.getElementById('challengerElo').textContent = '?';
+            document.getElementById('challengerWinrate').textContent = '?%';
+          });
+      }
+
+      // Afficher la notification
+      document.getElementById('matchRequest').style.display = 'block';
+    });
+
+    socket.on("gameJoined", (data) => {
+      localStorage.setItem("gameId", data.gameId);
+      localStorage.setItem("playerType", data.playerType);
+      window.location.href = "/game";
+    });
+
+    socket.on("matchAccepted", (gameId) => {
+      document.getElementById("gameId").value = gameId;
+      joinGame();
+    });
+
+    socket.on("gameFull", () => {
+      alert("Cette partie est déjà complète !");
+    });
+
+    socket.on("notAuthenticated", () => {
+      window.location.href = "/login";
+    });
+
+    socket.on("matchDeclined", (player) => {
+      alert(`${player} a décliné votre demande de match.`);
+    });
+
+    // Gestionnaires d'événements
+    document.getElementById("modalBackdrop").onclick = () => {
+      hidePlayers();
+      hideLeaderboard();
+      closePlayerModal();
+    };
+
+    // Rafraîchissement périodique
+    setInterval(() => {
+      socket.emit("requestOnlinePlayers");
+      socket.emit("requestLeaderboard");
+    }, 5000);
+
+    // Gestion du tactile
+    document.addEventListener("touchstart", function (e) {
+      if (e.target.classList.contains("modal-backdrop")) {
+        hidePlayers();
+        hideLeaderboard();
+        closePlayerModal();
+      }
+    });
+  </script>
+</body>
+
+</html>

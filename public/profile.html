@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profil Joueur - Dots Capture</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+
+         /* Styles pour la modal de modification du nom d'utilisateur */
+ /* Styles pour la modal de modification du nom d'utilisateur */
+ .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-content {
+        background-color: white;
+        margin: 15% auto;
+        padding: 20px;
+        border-radius: 10px;
+        width: 80%;
+        max-width: 500px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        position: relative;
+    }
+
+    .close-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        font-size: 20px;
+        cursor: pointer;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+
+    .form-group input {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+
+    .form-submit {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    .form-submit button {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .form-submit button.cancel {
+        background-color: #ddd;
+    }
+
+    .form-submit button.submit {
+        background-color: #4a90e2;
+        color: white;
+    }
+    
+    .form-submit button:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+    }
+    
+    .edit-username-btn {
+        background: none;
+        border: none;
+        color: #4a90e2;
+        cursor: pointer;
+        font-size: 14px;
+        margin-left: 10px;
+    }
+
+    .edit-username-btn:hover {
+        text-decoration: underline;
+    }
+    
+    .error-message {
+        color: #e74c3c;
+        font-size: 14px;
+        margin-top: 5px;
+        display: none;
+    }
+    
+    /* Animation de chargement pour le bouton */
+    .loading {
+        opacity: 0.7;
+        pointer-events: none;
+    }
+    
+    /* Indication visuelle du changement */
+    .username-updated {
+        animation: highlight 2s ease-in-out;
+    }
+    
+    @keyframes highlight {
+        0% { background-color: rgba(74, 144, 226, 0.2); }
+        100% { background-color: transparent; }
+    }
+    
+    
+    
+    .avatar-container {
+        position: relative;
+        margin-bottom: 10px;
+    }
+
+    .photo-upload-btn {
+        display: inline-block;
+        padding: 6px 12px;
+        background-color: #4a90e2;
+        color: white;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background-color 0.2s;
+    }
+
+    .photo-upload-btn:hover {
+        background-color: #357abd;
+    }
+    
+    .photo-remove-btn {
+        background-color: #e74c3c;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background-color 0.2s;
+    }
+    
+    .photo-remove-btn:hover {
+        background-color: #c0392b;
+    }
+    
+    /* Animation de chargement */
+    @keyframes spinner {
+        to {transform: rotate(360deg);}
+    }
+    
+    .loading-spinner {
+        border: 4px solid rgba(0, 0, 0, 0.1);
+        border-radius: 50%;
+        border-top: 4px solid #4a90e2;
+        width: 20px;
+        height: 20px;
+        animation: spinner 1s linear infinite;
+        display: inline-block;
+        vertical-align: middle;
+        margin-right: 5px;
+    }
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+        }
+
+        .profile-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .profile-header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .profile-left {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-right: 20px;
+        }
+
+        .avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background-color: #4a90e2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 40px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .elo-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #4a90e2;
+            color: white;
+            border-radius: 20px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .profile-middle {
+            flex-grow: 1;
+        }
+
+        .username {
+            font-size: 24px;
+            margin: 0 0 10px 0;
+            color: #2d3748;
+        }
+
+        .user-info {
+            color: #4a5568;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .profile-right {
+            min-width: 200px;
+            background-color: #f8fafc;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #edf2f7;
+        }
+
+        .achievements-title {
+            font-size: 16px;
+            color: #2d3748;
+            margin-top: 0;
+            margin-bottom: 10px;
+            text-align: center;
+            border-bottom: 1px solid #edf2f7;
+            padding-bottom: 5px;
+        }
+
+        .achievements-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .achievement-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #edf2f7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: relative;
+            cursor: pointer;
+        }
+
+        .achievement-icon:hover::after {
+            content: attr(data-title);
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2d3748;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 10;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .stat-card h3 {
+            margin: 0;
+            color: #4a5568;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+
+        .stat-card p {
+            margin: 10px 0 0;
+            font-size: 24px;
+            font-weight: bold;
+            color: #2d3748;
+        }
+
+        .match-history {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .match-history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .match-history h2 {
+            color: #2d3748;
+            margin-top: 0;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #edf2f7;
+        }
+
+        .match-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #edf2f7;
+            transition: background-color 0.2s;
+        }
+
+        .match-item:hover {
+            background-color: #f8fafc;
+        }
+
+        .match-info {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            font-size: 0.9em;
+        
+        }
+
+        .match-details {
+            font-size: 0.6em;
+            color: #666;
+        }
+
+        .match-result {
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .win {
+            background: #c6f6d5;
+            color: #2f855a;
+        }
+
+        .loss {
+            background: #fed7d7;
+            color: #c53030;
+        }
+
+        .elo-change {
+            font-weight: bold;
+            margin-left: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .elo-positive {
+            color: #2f855a;
+            background: #f0fff4;
+        }
+
+        .elo-negative {
+            color: #c53030;
+            background: #fff5f5;
+        }
+
+        .end-reason {
+            font-size: 0.85em;
+            padding: 3px 8px;
+            background: #edf2f7;
+            border-radius: 4px;
+            margin-left: 10px;
+            color: #4a5568;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .pagination button {
+            margin: 0 5px;
+            padding: 5px 10px;
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .pagination button:hover {
+            background-color: #357abd;
+        }
+
+        .pagination button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .back-button {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #4a90e2;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            transition: background-color 0.2s;
+        }
+
+        .back-button:hover {
+            background: #357abd;
+        }
+
+        @media (max-width: 700px) {
+            .profile-header {
+                flex-direction: column;
+            }
+
+            .profile-left {
+                margin-right: 0;
+                margin-bottom: 20px;
+                flex-direction: row;
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .profile-right {
+        width: 100%;
+        max-width: 100%; /* S'assurer que la largeur ne dépasse pas 100% */
+        margin: 0 auto; /* Centrer horizontalement */
+        padding: 10px;
+        box-sizing: border-box; /* Inclure padding dans la largeur */
+    }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .match-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .match-result {
+                align-self: flex-end;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="profile-container">
+
+
+        <div class="profile-header">
+            <div class="profile-left">
+                <div class="avatar-container">
+                    <div class="avatar" id="userAvatar">A</div>
+                    <img id="profileImage" src="" alt="Photo de profil" style="display: none; width: 100px; height: 100px; border-radius: 50%; object-fit: cover;">
+                    
+                    <!-- Boutons de gestion de la photo visibles uniquement pour le propriétaire du profil -->
+                    <div id="photoControls" style="display: none; margin-top: 10px; text-align: center;">
+                        <label for="photoUpload" class="photo-upload-btn">
+                            <span id="uploadButtonText">Changer la photo</span>
+                        </label>
+                        <input type="file" id="photoUpload" style="display: none;" accept="image/*">
+                        <button id="removePhotoBtn" style="display: none; margin-top: 5px;" class="photo-remove-btn">Supprimer</button>
+                    </div>
+                </div>
+                <div class="elo-badge" id="currentElo">ELO: --</div>
+            </div>
+
+            <div class="profile-middle">
+                <h1 class="username" id="profileUsername">Chargement...</h1>
+                <div class="user-info" id="memberSince">Membre depuis: --</div>
+                <div class="user-info" id="lastActive">Dernière activité: --</div>
+                <!-- Ajoutez ce HTML à l'intérieur du div avec la classe "profile-middle" -->
+                <h1 class="username" id="profileUsername">
+                    <button id="editUsernameBtn" class="edit-username-btn" style="display: none;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                    </button>
+                </h1>
+            </div>
+
+            <div class="profile-right">
+                <h3 class="achievements-title">Distinctions</h3>
+                <div id="achievements" class="achievements-container">
+                    <!-- Les distinctions seront insérées ici -->
+                </div>
+            </div>
+        </div>
+
+        <div class="stats-grid" id="statsGrid">
+            <!-- Les stats seront insérées ici -->
+        </div>
+
+        <div class="match-history">
+            <h2>Parties Jouées</h2>
+            <div id="matchHistory">
+                <!-- L'historique sera inséré ici -->
+            </div>
+            <div class="pagination" id="pagination">
+                <!-- La pagination sera insérée ici -->
+            </div>
+        </div>
+    </div>
+
+    <div id="usernameModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>Modifier le nom d'utilisateur</h2>
+            <p>Attention : cette action modifiera votre identité dans toutes les parties et statistiques.</p>
+            <div id="nameChangeInfo" class="info-box" style="margin-bottom: 15px; padding: 10px; background-color: #f8f9fa; border-radius: 4px; border-left: 4px solid #4a90e2;">
+                <p style="margin: 0; font-size: 14px;">Fréquence de changement autorisée selon votre rang :</p>
+                <ul style="margin: 5px 0; padding-left: 20px; font-size: 14px;">
+                    <li><strong>Konungr</strong> : chaque jour</li>
+                    <li><strong>Jarl</strong> : chaque semaine</li>
+                    <li><strong>Berserker/Einherjar</strong> : toutes les deux semaines</li>
+                    <li><strong>Autres joueurs</strong> : une fois par mois</li>
+                </ul>
+            </div>
+            <div id="nextChangeInfo" style="display: none; margin-bottom: 15px; padding: 10px; background-color: #fff3cd; border-radius: 4px; border-left: 4px solid #ffc107; font-size: 14px;">
+            </div>
+            
+            <form id="changeUsernameForm">
+                <div class="form-group">
+                    <label for="newUsername">Nouveau nom d'utilisateur</label>
+                    <input type="text" id="newUsername" name="newUsername" placeholder="Entrez votre nouveau nom d'utilisateur" minlength="3" maxlength="15" required>
+                    <div id="usernameError" class="error-message"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="confirmPassword">Confirmez votre mot de passe</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Entrez votre mot de passe actuel" required>
+                    <div id="passwordError" class="error-message"></div>
+                </div>
+                
+                <div class="form-submit">
+                    <button type="button" class="cancel" id="cancelChange">Annuler</button>
+                    <button type="submit" class="submit" id="submitChange">Confirmer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <script>
+        // Récupérer le nom d'utilisateur depuis l'URL
+        const username = decodeURIComponent(window.location.pathname.split('/').pop());
+        // Variables pour la pagination
+        let currentPage = 1;
+        const matchesPerPage = 5;
+        let allMatches = [];
+
+        // Mettre à jour l'avatar avec la première lettre
+        function updateAvatar(username) {
+            const avatarElement = document.getElementById('userAvatar');
+            if (username && username.length > 0) {
+                avatarElement.textContent = username.charAt(0).toUpperCase();
+            }
+        }
+
+        // Créer un timestamp relatif (il y a X heures)
+        function timeAgo(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const seconds = Math.floor((now - date) / 1000);
+
+            let interval = Math.floor(seconds / 31536000);
+            if (interval >= 1) {
+                return interval + " an" + (interval > 1 ? "s" : "");
+            }
+            interval = Math.floor(seconds / 2592000);
+            if (interval >= 1) {
+                return interval + " mois";
+            }
+            interval = Math.floor(seconds / 86400);
+            if (interval >= 1) {
+                return interval + " jour" + (interval > 1 ? "s" : "");
+            }
+            interval = Math.floor(seconds / 3600);
+            if (interval >= 1) {
+                return "il y a " + interval + " heure" + (interval > 1 ? "s" : "");
+            }
+            interval = Math.floor(seconds / 60);
+            if (interval >= 1) {
+                return "il y a " + interval + " minute" + (interval > 1 ? "s" : "");
+            }
+            return "il y a " + Math.floor(seconds) + " seconde" + (seconds > 1 ? "s" : "");
+        }
+
+        // Mettre à jour la pagination
+        function updatePagination(totalMatches) {
+            const paginationElement = document.getElementById('pagination');
+            const totalPages = Math.ceil(totalMatches / matchesPerPage);
+
+            if (totalPages <= 1) {
+                paginationElement.style.display = 'none';
+                return;
+            }
+
+            paginationElement.style.display = 'flex';
+            paginationElement.innerHTML = `
+                <button id="prevPage" ${currentPage === 1 ? 'disabled' : ''}>Précédent</button>
+                <span style="margin: 5px; line-height: 2;">${currentPage} / ${totalPages}</span>
+                <button id="nextPage" ${currentPage === totalPages ? 'disabled' : ''}>Suivant</button>
+            `;
+
+            document.getElementById('prevPage').addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    displayMatches();
+                    updatePagination(totalMatches);
+                }
+            });
+
+            document.getElementById('nextPage').addEventListener('click', () => {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    displayMatches();
+                    updatePagination(totalMatches);
+                }
+            });
+        }
+
+        // Afficher les matches pour la page courante
+        function displayMatches() {
+    const startIdx = (currentPage - 1) * matchesPerPage;
+    const endIdx = startIdx + matchesPerPage;
+    const matchesToShow = allMatches.slice(startIdx, endIdx);
+    const matchHistory = document.getElementById('matchHistory');
+
+    if (matchesToShow.length === 0) {
+        // Vérifier le filtre actif via l'élément texte
+        const filterText = document.getElementById('current-filter').textContent;
+        
+        if (filterText.includes('victoires')) {
+            matchHistory.innerHTML = `<p style="text-align: center; color: #666;">Aucune victoire à afficher</p>`;
+        } else if (filterText.includes('défaites')) {
+            matchHistory.innerHTML = `<p style="text-align: center; color: #666;">Aucune défaite à afficher</p>`;
+        } else {
+            matchHistory.innerHTML = `<p style="text-align: center; color: #666;">Aucune partie à afficher</p>`;
+        }
+        return;
+    }
+
+    const filterStyles = document.createElement('style');
+filterStyles.textContent = `
+    #filter-wins, #filter-losses, #filter-all {
+        transition: all 0.2s ease;
+    }
+    #filter-wins:hover, #filter-losses:hover, #filter-all:hover {
+        text-decoration: underline;
+        opacity: 0.8;
+    }
+`;
+document.head.appendChild(filterStyles);
+
+    // Ajouter cette fonction CSS pour le style du bouton de replay
+    const replayButtonStyle = `
+        <style>
+            .match-item {
+                cursor: pointer;
+                transition: background-color 0.2s;
+            }
+            .match-item:hover {
+                background-color: #f0f7ff;
+            }
+            .replay-btn {
+                margin-left: 10px;
+                padding: 3px 8px;
+                background-color: #4a90e2;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                font-size: 0.8em;
+                cursor: pointer;
+                transition: background-color 0.2s;
+            }
+            .replay-btn:hover {
+                background-color: #357abd;
+            }
+        </style>
+    `;
+    document.head.insertAdjacentHTML('beforeend', replayButtonStyle);
+
+    // D'abord, générer le HTML pour tous les matchs
+    matchHistory.innerHTML = matchesToShow.map((match, index) => {
+        const endReasonMap = {
+            'timeoutGame': 'Temps écoulé',
+            'abandonGame': 'Abandon',
+            'miseATerre': 'Mise à terre'
+        };
+
+        const eloChange = match.elo_change;
+        const eloChangeClass = eloChange >= 0 ? 'elo-positive' : 'elo-negative';
+        const eloChangeText = `${eloChange >= 0 ? '+' : ''}${eloChange}`;
+
+        // Créer un espace réservé pour la photo qui sera rempli plus tard
+        return `
+        <div class="match-item" onclick="viewReplay('${match.game_id}')">
+            <div class="match-info">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center;">
+                        <div id="opponent-avatar-${index}" class="avatar" style="width: 30px; height: 30px; margin-right: 8px; font-size: 14px;">
+                            ${match.opponent_username.charAt(0).toUpperCase()}
+                        </div>
+                        <strong>${match.opponent_username}</strong>
+                        <span class="end-reason">${endReasonMap[match.end_reason] || match.end_reason}</span>
+                    </div>
+                    <span class="replay-btn">Replay</span>
+                </div>
+                <div class="match-details">
+                    ${new Date(match.created_at).toLocaleString('fr-FR')}
+                    <span class="elo-details">(${match.player_elo_before} <span class="elo-change ${eloChangeClass}">${eloChangeText} ELO</span> <strong>${match.player_elo_after}</strong>)</span>
+                </div>
+            </div>
+        </div>
+        `;
+    }).join('');
+
+    // Ensuite, charger les photos des adversaires
+    matchesToShow.forEach((match, index) => {
+        loadOpponentPhoto(match.opponent_username, index);
+    });
+}
+
+// Fonction pour naviguer vers la page de replay
+function viewReplay(gameId) {
+    window.location.href = `/replay?id=${gameId}`;
+}
+
+
+function loadOpponentPhoto(opponentUsername, index) {
+    fetch(`/api/profile-photo/${opponentUsername}`)
+        .then(response => {
+            if (response.ok) {
+                return response.blob();
+            }
+            throw new Error('Photo non trouvée');
+        })
+        .then(blob => {
+            const avatarContainer = document.getElementById(`opponent-avatar-${index}`);
+            if (avatarContainer) {
+                // Créer un élément image et remplacer le contenu existant
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(blob);
+                img.alt = `Photo de ${opponentUsername}`;
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.borderRadius = '50%';
+                img.style.objectFit = 'cover';
+                
+                // Vider le conteneur et ajouter l'image
+                avatarContainer.textContent = '';
+                avatarContainer.appendChild(img);
+            }
+        })
+        .catch(error => {
+            // Garder la première lettre comme avatar en cas d'erreur (déjà fait par défaut)
+            console.log(`Pas de photo pour ${opponentUsername}:`, error);
+        });
+}
+
+// Ajouter du CSS pour les avatars des adversaires
+document.head.insertAdjacentHTML('beforeend', `
+<style>
+    .match-item .avatar {
+        background-color: #4a90e2;
+        color: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 50%;
+        min-width: 30px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+</style>
+`);
+
+        // Charger les données du profil
+        fetch(`/api/profile/${username}`)
+            .then(response => response.json())
+            .then(data => {
+                // Mettre à jour l'en-tête du profil
+                document.getElementById('profileUsername').textContent = data.user.username;
+                document.getElementById('currentElo').textContent = `ELO: ${data.stats.currentElo}`;
+
+                // Mettre à jour l'avatar
+                updateAvatar(data.user.username);
+
+                // Mettre à jour les infos d'adhésion
+                if (data.user.created_at) {
+                    const joinDate = new Date(data.user.created_at).toLocaleDateString('fr-FR');
+                    document.getElementById('memberSince').textContent = `Membre depuis: ${joinDate}`;
+                }
+                if (data.user.last_active) {
+                    document.getElementById('lastActive').textContent = `Dernière activité: ${timeAgo(data.user.last_active)}`;
+                }
+
+                // Mettre à jour les distinctions (achievements)
+                const achievementsElement = document.getElementById('achievements');
+
+                // Définir les distinctions avec thème viking
+                const achievementIcons = {
+                    // Progression et rangs
+                    'einherjar': { icon: '⚔️', title: "Einherjar - 5 victoires consécutives" },
+                    'berserker': { icon: '🪓', title: "Berserker - 10 victoires consécutives" },
+                    'jarl': { icon: '👑', title: "Jarl - Atteint ELO 1400" },
+                    'konungr': { icon: '🏆', title: "Konungr - Atteint ELO 1800" },
+
+                    // Exploits de combat
+                    'skald': { icon: '📜', title: "Skald - 50 parties jouées" },
+                    'thegn': { icon: '🛡️', title: "Thegn - 5 victoires contre joueurs ELO 1200+" },
+                    'drengr': { icon: '⚡', title: "Drengr - Victoire contre joueur ELO 1500+" },
+                    'hersir': { icon: '🪶', title: "Hersir - Victoire contre 10 joueurs différents" },
+
+                    // Conquêtes
+                    'ulfhednar': { icon: '🐺', title: "Ulfhednar - 3 victoires en moins de 24h" },
+                    'hirdman': { icon: '🏹', title: "Hirdman - Remporter 3 victoires par mise à terre" },
+                    'vikingr': { icon: '⛵', title: "Vikingr - Victoire contre le champion actuel" },
+                    'valhalla': { icon: '🌟', title: "Valhalla - Dans le top 10 du classement" },
+
+                    // Événements spéciaux
+                    'mjolnir': { icon: '🔨', title: "Mjölnir - Champion du tournoi mensuel" },
+                    'gungnir': { icon: '⚜️', title: "Gungnir - Champion d'Afrique" },
+                    'draupnir': { icon: '💍', title: "Draupnir - Champion intercontinental" }
+                };
+
+                // Vérifier si le joueur a des distinctions débloquées
+                const hasAchievements = data.user.achievements &&
+                    Array.isArray(data.user.achievements) &&
+                    data.user.achievements.length > 0;
+
+                // Vérifier si le joueur a joué au moins une partie
+                const hasPlayedGames = data.stats.totalGames > 0;
+
+                // N'afficher les distinctions que si le joueur a joué des parties ET a débloqué des distinctions
+                if (hasPlayedGames && hasAchievements) {
+                    achievementsElement.innerHTML = data.user.achievements
+                        .filter(code => achievementIcons[code]) // Valider que l'icône existe
+                        .map(code => {
+                            const achievement = achievementIcons[code];
+                            return `<div class="achievement-icon" data-title="${achievement.title}">${achievement.icon}</div>`;
+                        })
+                        .join('');
+                } else {
+                    achievementsElement.innerHTML = `<p style="text-align: center; color: #666;">Complétez des missions pour débloquer des distinctions</p>`;
+                }
+
+
+
+                // Mettre à jour les stats
+                const statsGrid = document.getElementById('statsGrid');
+statsGrid.innerHTML = `
+    <div class="stat-card">
+        <h3>Parties jouées</h3>
+        <p>
+            <span id="filter-wins" style="color: green; cursor: pointer;">${data.stats.wins}</span> + 
+            <span id="filter-losses" style="color: red; cursor: pointer;">${data.stats.losses}</span> / 
+            <span id="filter-all" style="cursor: pointer;">${data.stats.totalGames}</span>
+            <span id="current-filter" style="font-size: 12px; margin-left: 10px; color: #666;"></span>
+        </p>
+    </div>
+    
+    <div class="stat-card">
+        <h3>Taux de victoire</h3>
+        <p>${data.stats.winRate}%</p>
+    </div>
+`;
+
+                // Mettre à jour l'historique des matches avec pagination
+                if (data.matchHistory && data.matchHistory.length > 0) {
+                    allMatches = data.matchHistory;
+                    displayMatches();
+                    updatePagination(allMatches.length);
+                } else {
+                    document.getElementById('matchHistory').innerHTML = `
+                        <p style="text-align: center; color: #666;">Aucune partie jouée pour le moment</p>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+                alert('Erreur lors du chargement du profil');
+            });
+    </script>
+    <script>
+        // Variables pour la gestion des photos de profil
+        let isMyProfile = false;
+        let hasProfilePhoto = false;
+        
+        // Fonction pour charger la photo de profil
+        function loadProfilePhoto(username) {
+            // Vérifier l'existence d'une photo puis l'afficher
+            fetch(`/api/profile-photo/${username}`)
+                .then(response => {
+                    if (response.ok) {
+                        return response.blob();
+                    }
+                    throw new Error('Photo non trouvée');
+                })
+                .then(blob => {
+                    const profileImage = document.getElementById('profileImage');
+                    profileImage.src = URL.createObjectURL(blob);
+                    profileImage.style.display = 'block';
+                    document.getElementById('userAvatar').style.display = 'none';
+                    hasProfilePhoto = true;
+                    
+                    if (isMyProfile) {
+                        document.getElementById('uploadButtonText').textContent = 'Changer la photo';
+                        document.getElementById('removePhotoBtn').style.display = 'inline-block';
+                    }
+                })
+                .catch(error => {
+                    console.log('Aucune photo de profil:', error);
+                    document.getElementById('userAvatar').style.display = 'flex';
+                    document.getElementById('profileImage').style.display = 'none';
+                    
+                    if (isMyProfile) {
+                        document.getElementById('uploadButtonText').textContent = 'Ajouter une photo';
+                        document.getElementById('removePhotoBtn').style.display = 'none';
+                    }
+                });
+        }
+        
+        // Fonction pour télécharger une photo de profil
+        function uploadProfilePhoto(file) {
+            const formData = new FormData();
+            formData.append('photo', file);
+            
+            // Afficher l'indicateur de chargement
+            const uploadBtn = document.getElementById('uploadButtonText');
+            const originalText = uploadBtn.textContent;
+            uploadBtn.innerHTML = '<span class="loading-spinner"></span> Envoi...';
+            
+            fetch('/api/upload-profile-photo', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Recharger la photo
+                    loadProfilePhoto(username);
+                } else {
+                    alert("Erreur lors du téléchargement de la photo.");
+                }
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+                alert("Une erreur est survenue lors du téléchargement.");
+            })
+            .finally(() => {
+                // Restaurer le texte du bouton
+                uploadBtn.innerHTML = originalText;
+            });
+        }
+        
+        // Fonction pour supprimer la photo de profil
+        function removeProfilePhoto() {
+            if (confirm("Êtes-vous sûr de vouloir supprimer votre photo de profil ?")) {
+                fetch('/api/profile-photo', {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('userAvatar').style.display = 'flex';
+                        document.getElementById('profileImage').style.display = 'none';
+                        document.getElementById('uploadButtonText').textContent = 'Ajouter une photo';
+                        document.getElementById('removePhotoBtn').style.display = 'none';
+                        hasProfilePhoto = false;
+                    } else {
+                        alert("Erreur lors de la suppression de la photo.");
+                    }
+                })
+                .catch(error => {
+                    console.error('Erreur:', error);
+                    alert("Une erreur est survenue lors de la suppression.");
+                });
+            }
+        }
+        
+        // Modifier la partie existante du chargement du profil pour gérer la photo
+        document.addEventListener('DOMContentLoaded', function() {
+            // Vérifier si c'est le profil de l'utilisateur connecté
+            fetch('/check-session')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.authenticated && data.username === username) {
+                        isMyProfile = true;
+                        document.getElementById('photoControls').style.display = 'block';
+                    }
+                });
+                
+            // Gestionnaire d'événement pour le téléchargement de photo
+            document.getElementById('photoUpload').addEventListener('change', function(e) {
+                if (this.files && this.files[0]) {
+                    uploadProfilePhoto(this.files[0]);
+                }
+            });
+            
+            // Gestionnaire d'événement pour la suppression de photo
+            document.getElementById('removePhotoBtn').addEventListener('click', removeProfilePhoto);
+        });
+        
+        // Modifier la fonction fetch existante pour récupérer les données du profil
+        fetch(`/api/profile/${username}`)
+    .then(response => response.json())
+    .then(data => {
+        // Code existant jusqu'à la section des stats
+        
+        // Mettre à jour les stats avec des éléments cliquables
+        const statsGrid = document.getElementById('statsGrid');
+        statsGrid.innerHTML = `
+            <div class="stat-card">
+                <h3>Parties jouées</h3>
+                <p>
+                    <span id="filter-wins" style="color: green; cursor: pointer;">${data.stats.wins}</span> + 
+                    <span id="filter-losses" style="color: red; cursor: pointer;">${data.stats.losses}</span> / 
+                    <span id="filter-all" style="cursor: pointer;">${data.stats.totalGames}</span>
+                    <span id="current-filter" style="font-size: 12px; margin-left: 10px; color: #666;"></span>
+                </p>
+            </div>
+            
+            <div class="stat-card">
+                <h3>Taux de victoire</h3>
+                <p>${data.stats.winRate}%</p>
+            </div>
+        `;
+        
+        // Sauvegarder tous les matchs
+        let originalMatches = [];
+        if (data.matchHistory && data.matchHistory.length > 0) {
+            allMatches = data.matchHistory;
+            originalMatches = [...allMatches];
+            displayMatches();
+            updatePagination(allMatches.length);
+            
+            // Variable pour suivre le filtre actif
+            let activeFilter = 'all';
+            
+            // Ajouter des gestionnaires d'événements pour les filtres
+            document.getElementById('filter-wins').addEventListener('click', function() {
+                // Styliser l'élément actif
+                this.style.fontWeight = 'bold';
+                this.style.textDecoration = 'underline';
+                document.getElementById('filter-losses').style.fontWeight = 'normal';
+                document.getElementById('filter-losses').style.textDecoration = 'none';
+                document.getElementById('filter-all').style.fontWeight = 'normal';
+                document.getElementById('filter-all').style.textDecoration = 'none';
+                
+                // Mettre à jour le filtre
+                activeFilter = 'wins';
+                document.getElementById('current-filter').textContent = '(victoires)';
+                
+                // Filtrer les matchs
+                allMatches = originalMatches.filter(match => match.player_elo_change > 0 || match.elo_change > 0);
+                currentPage = 1; // Réinitialiser la pagination
+                displayMatches();
+                updatePagination(allMatches.length);
+            });
+            
+            document.getElementById('filter-losses').addEventListener('click', function() {
+                // Styliser l'élément actif
+                this.style.fontWeight = 'bold';
+                this.style.textDecoration = 'underline';
+                document.getElementById('filter-wins').style.fontWeight = 'normal';
+                document.getElementById('filter-wins').style.textDecoration = 'none';
+                document.getElementById('filter-all').style.fontWeight = 'normal';
+                document.getElementById('filter-all').style.textDecoration = 'none';
+                
+                // Mettre à jour le filtre
+                activeFilter = 'losses';
+                document.getElementById('current-filter').textContent = '(défaites)';
+                
+                // Filtrer les matchs
+                allMatches = originalMatches.filter(match => match.player_elo_change < 0 || match.elo_change < 0);
+                currentPage = 1; // Réinitialiser la pagination
+                displayMatches();
+                updatePagination(allMatches.length);
+            });
+            
+            document.getElementById('filter-all').addEventListener('click', function() {
+                // Styliser l'élément actif
+                this.style.fontWeight = 'bold';
+                this.style.textDecoration = 'underline';
+                document.getElementById('filter-wins').style.fontWeight = 'normal';
+                document.getElementById('filter-wins').style.textDecoration = 'none';
+                document.getElementById('filter-losses').style.fontWeight = 'normal';
+                document.getElementById('filter-losses').style.textDecoration = 'none';
+                
+                // Mettre à jour le filtre
+                activeFilter = 'all';
+                document.getElementById('current-filter').textContent = '(toutes les parties)';
+                
+                // Réinitialiser les matchs
+                allMatches = [...originalMatches];
+                currentPage = 1; // Réinitialiser la pagination
+                displayMatches();
+                updatePagination(allMatches.length);
+            });
+        } else {
+            document.getElementById('matchHistory').innerHTML = `
+                <p style="text-align: center; color: #666;">Aucune partie jouée pour le moment</p>
+            `;
+        }
+        
+        // Le reste du code existant...
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        alert('Erreur lors du chargement du profil');
+    });
+
+
+    </script>
+<!-- Ajoutez ce code JavaScript avant la fermeture de la balise body -->
+<script>
+    // Code pour gérer la modification du nom d'utilisateur
+    document.addEventListener('DOMContentLoaded', function() {
+        const modal = document.getElementById('usernameModal');
+        const editBtn = document.getElementById('editUsernameBtn');
+        const closeBtn = document.querySelector('.close-btn');
+        const cancelBtn = document.getElementById('cancelChange');
+        const form = document.getElementById('changeUsernameForm');
+        const newUsernameInput = document.getElementById('newUsername');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+        const submitBtn = document.getElementById('submitChange');
+        const usernameError = document.getElementById('usernameError');
+        const passwordError = document.getElementById('passwordError');
+
+        // Afficher le bouton d'édition seulement si l'utilisateur est sur son propre profil
+        fetch('/check-session')
+            .then(response => response.json())
+            .then(data => {
+                if (data.authenticated && data.username === username) {
+                    editBtn.style.display = 'inline-block';
+                }
+            });
+
+        // Ouvrir la modal
+        editBtn.addEventListener('click', function() {
+            // Vérifier d'abord si l'utilisateur peut changer son nom
+            fetch('/api/check-name-change-eligibility')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.canChange) {
+                        // L'utilisateur peut changer son nom
+                        modal.style.display = 'block';
+                        newUsernameInput.value = '';
+                        confirmPasswordInput.value = '';
+                        usernameError.style.display = 'none';
+                        passwordError.style.display = 'none';
+                        
+                        // Afficher info sur le prochain changement possible si applicable
+                        if (data.nextChangeDate) {
+                            const nextChangeInfo = document.getElementById('nextChangeInfo');
+                            nextChangeInfo.innerHTML = `Après ce changement, vous pourrez modifier à nouveau votre nom le <strong>${new Date(data.nextChangeDate).toLocaleDateString('fr-FR')}</strong>.`;
+                            nextChangeInfo.style.display = 'block';
+                        } else {
+                            document.getElementById('nextChangeInfo').style.display = 'none';
+                        }
+                    } else {
+                        // L'utilisateur ne peut pas changer son nom actuellement
+                        alert(`Vous ne pouvez pas changer votre nom pour le moment. Prochain changement autorisé le ${new Date(data.nextChangeDate).toLocaleDateString('fr-FR')} (dans ${data.daysLeft} jour${data.daysLeft > 1 ? 's' : ''}).`);
+                    }
+                })
+                .catch(error => {
+                    console.error('Erreur:', error);
+                    modal.style.display = 'block';
+                });
+        });
+
+        // Fermer la modal
+        function closeModal() {
+            modal.style.display = 'none';
+        }
+
+        closeBtn.addEventListener('click', closeModal);
+        cancelBtn.addEventListener('click', closeModal);
+
+        // Cliquer en dehors de la modal pour la fermer
+        window.addEventListener('click', function(event) {
+            if (event.target === modal) {
+                closeModal();
+            }
+        });
+
+        // Validation du formulaire
+        function validateUsername() {
+            const value = newUsernameInput.value.trim();
+            if (value.length < 3) {
+                usernameError.textContent = 'Le nom d\'utilisateur doit contenir au moins 3 caractères';
+                usernameError.style.display = 'block';
+                return false;
+            }
+            if (value.length > 20) {
+                usernameError.textContent = 'Le nom d\'utilisateur ne peut pas dépasser 20 caractères';
+                usernameError.style.display = 'block';
+                return false;
+            }
+            if (value === username) {
+                usernameError.textContent = 'Le nouveau nom d\'utilisateur doit être différent de l\'actuel';
+                usernameError.style.display = 'block';
+                return false;
+            }
+            usernameError.style.display = 'none';
+            return true;
+        }
+
+        newUsernameInput.addEventListener('input', validateUsername);
+
+        // Soumission du formulaire
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            if (!validateUsername()) {
+                return;
+            }
+            
+            // Réinitialiser les messages d'erreur
+            usernameError.style.display = 'none';
+            passwordError.style.display = 'none';
+            
+            // Désactiver le bouton pendant la soumission
+            submitBtn.disabled = true;
+            submitBtn.classList.add('loading');
+            submitBtn.innerHTML = '<span class="loading-spinner"></span> Envoi...';
+            
+            fetch('/api/update-username', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    newUsername: newUsernameInput.value.trim(),
+                    password: confirmPasswordInput.value
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    closeModal();
+                    
+                    // Afficher un message de succès avec information sur le prochain changement possible
+                    const message = `Nom d'utilisateur modifié avec succès ! Prochain changement possible dans ${data.nextChangeDays} jour${data.nextChangeDays > 1 ? 's' : ''} (${new Date(data.nextChangeDate).toLocaleDateString('fr-FR')}).`;
+                    
+                    // Créer un élément de notification qui disparaît
+                    const notification = document.createElement('div');
+                    notification.style.position = 'fixed';
+                    notification.style.top = '20px';
+                    notification.style.left = '50%';
+                    notification.style.transform = 'translateX(-50%)';
+                    notification.style.backgroundColor = '#4CAF50';
+                    notification.style.color = 'white';
+                    notification.style.padding = '15px 20px';
+                    notification.style.borderRadius = '4px';
+                    notification.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+                    notification.style.zIndex = '9999';
+                    notification.textContent = message;
+                    document.body.appendChild(notification);
+                    
+                    // Mettre à jour l'interface utilisateur
+                    const profileUsername = document.getElementById('profileUsername');
+                    const oldUsername = profileUsername.textContent.split(' ')[0];
+                    profileUsername.textContent = data.newUsername;
+                    profileUsername.appendChild(editBtn);
+                    profileUsername.classList.add('username-updated');
+                    
+                    // Mettre à jour l'avatar avec la première lettre si nécessaire
+                    if (!hasProfilePhoto) {
+                        updateAvatar(data.newUsername);
+                    }
+                    
+                    // Faire disparaître la notification après 5 secondes
+                    setTimeout(() => {
+                        notification.style.opacity = '0';
+                        notification.style.transition = 'opacity 0.5s ease';
+                        setTimeout(() => {
+                            document.body.removeChild(notification);
+                        }, 500);
+                    }, 5000);
+                    
+                    // Rediriger vers la nouvelle URL après un court délai
+                    setTimeout(() => {
+                        window.location.href = `/profile/${data.newUsername}`;
+                    }, 1500);
+                    
+                } else {
+                    if (data.error.includes("mot de passe")) {
+                        passwordError.textContent = data.error;
+                        passwordError.style.display = 'block';
+                    } else {
+                        usernameError.textContent = data.error;
+                        usernameError.style.display = 'block';
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+                usernameError.textContent = 'Une erreur est survenue. Veuillez réessayer.';
+                usernameError.style.display = 'block';
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('loading');
+                submitBtn.textContent = 'Confirmer';
+            });
+        });
+    });
+</script>
+</body>
+
+</html>
